@@ -72,7 +72,7 @@ export default function Navbar() {
         
         {/* LEFT: Logo */}
         <div className="flex-shrink-0 flex items-center">
-          <Link href="/" className="flex items-center -ml-2">
+          <Link href="/" className="flex items-center -ml-2" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <img src="/Asset/Logo.png" alt="E-Shop Logo" className="h-24 sm:h-[140px] w-auto object-contain mix-blend-multiply drop-shadow-xl" />
           </Link>
         </div>
