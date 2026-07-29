@@ -146,3 +146,14 @@ body {
    text-danger-500      -> discount tags, out-of-stock
    text-success-600     -> in-stock, order confirmed
    ============================================ */
+
+/* ============================================
+   Custom Animations
+   ============================================ */
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-ticker {
+  animation: ticker 25s linear infinite;
+}
