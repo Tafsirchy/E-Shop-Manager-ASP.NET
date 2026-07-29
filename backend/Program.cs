@@ -10,6 +10,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    });
+});
+
 // Configure MongoDB
 var mongoDbSettings = builder.Configuration.GetSection("EShopDatabase").Get<MongoDBSettings>();
 if (mongoDbSettings != null)
@@ -20,6 +28,9 @@ if (mongoDbSettings != null)
         var client = sp.GetRequiredService<IMongoClient>();
         return client.GetDatabase(mongoDbSettings.DatabaseName);
     });
+    
+    // Register application services
+    builder.Services.AddScoped<EShopManager.API.Services.ProductService>();
 }
 
 // Configure JWT Authentication
@@ -54,6 +65,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
