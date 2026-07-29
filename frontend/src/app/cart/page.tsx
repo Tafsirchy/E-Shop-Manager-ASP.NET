@@ -55,24 +55,24 @@ export default function CartPage() {
   const total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   return (
-    <div className="min-h-screen p-8 bg-gray-50 text-gray-900">
-      <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm">
+    <div className="min-h-screen p-8 bg-background text-foreground">
+      <div className="max-w-4xl mx-auto bg-card p-8 rounded-xl shadow-sm">
         <h1 className="text-3xl font-bold mb-6">Your Cart</h1>
         {cart.items.length === 0 ? (
-          <p className="text-gray-500">Your cart is empty.</p>
+          <p className="text-neutral-500">Your cart is empty.</p>
         ) : (
           <div>
             {cart.items.map(item => (
               <div key={item.productId} className="flex justify-between items-center py-4 border-b">
                 <div>
                   <h3 className="text-xl font-semibold">{item.productName}</h3>
-                  <p className="text-gray-500">Qty: {item.quantity}</p>
+                  <p className="text-neutral-500">Qty: {item.quantity}</p>
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="font-bold">৳{item.price * item.quantity}</span>
                   <button 
                     onClick={() => removeItem(item.productId)}
-                    className="text-red-500 hover:text-red-700"
+                    className="text-red-500 hover:text-danger-500"
                   >
                     Remove
                   </button>
@@ -88,7 +88,7 @@ export default function CartPage() {
             <div className="mt-8 flex justify-end">
               <button 
                 onClick={checkout}
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 font-semibold shadow-md transition-colors"
+                className="bg-primary-600 text-white px-8 py-3 rounded-lg hover:bg-primary-700 font-semibold shadow-md transition-colors"
               >
                 Proceed to Checkout
               </button>
