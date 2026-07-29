@@ -33,6 +33,7 @@ if (mongoDbSettings != null)
     builder.Services.AddScoped<EShopManager.API.Services.ProductService>();
     builder.Services.AddScoped<EShopManager.API.Services.CartService>();
     builder.Services.AddScoped<EShopManager.API.Services.OrderService>();
+    builder.Services.AddScoped<EShopManager.API.Services.SubscriptionService>();
 }
 
 // Configure JWT Authentication
