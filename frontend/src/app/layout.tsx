@@ -33,7 +33,7 @@ export default function RootLayout({
             <div className="flex items-center gap-8">
               <a href="/" className="text-xl font-black text-primary-600 tracking-tight">E-Shop<span className="text-foreground">Manager</span></a>
               <div className="hidden md:flex items-center gap-6">
-                <a href="/" className="text-sm font-medium text-neutral-600 hover:text-primary-600 transition">Products</a>
+                <a href="/product" className="text-sm font-medium text-neutral-600 hover:text-primary-600 transition">Products</a>
                 <a href="/subscriptions" className="text-sm font-medium text-neutral-600 hover:text-primary-600 transition">Subscriptions</a>
                 <a href="/membership" className="text-sm font-medium text-neutral-600 hover:text-primary-600 transition">Rewards</a>
               </div>
