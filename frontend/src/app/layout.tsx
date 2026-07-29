@@ -27,7 +27,27 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col bg-background">
+        <header className="bg-card shadow-sm sticky top-0 z-50">
+          <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div className="flex items-center gap-8">
+              <a href="/" className="text-xl font-black text-primary-600 tracking-tight">E-Shop<span className="text-foreground">Manager</span></a>
+              <div className="hidden md:flex items-center gap-6">
+                <a href="/" className="text-sm font-medium text-neutral-600 hover:text-primary-600 transition">Products</a>
+                <a href="/subscriptions" className="text-sm font-medium text-neutral-600 hover:text-primary-600 transition">Subscriptions</a>
+                <a href="/membership" className="text-sm font-medium text-neutral-600 hover:text-primary-600 transition">Rewards</a>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <a href="/cart" className="text-sm font-medium text-neutral-600 hover:text-primary-600 transition">🛒 Cart</a>
+              <a href="/admin" className="text-sm font-medium bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition">Admin Panel</a>
+            </div>
+          </nav>
+        </header>
+        <div className="flex-1">
+          {children}
+        </div>
+      </body>
     </html>
   );
 }
