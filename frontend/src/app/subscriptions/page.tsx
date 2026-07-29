@@ -59,7 +59,7 @@ export default function SubscriptionsPage() {
   };
 
   return (
-    <div className="min-h-screen p-8 bg-gray-50 text-gray-900">
+    <div className="min-h-screen p-8 bg-background text-foreground">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-bold mb-12 text-center">Subscription Plans</h1>
 
@@ -68,17 +68,17 @@ export default function SubscriptionsPage() {
           <div>
             <h2 className="text-2xl font-bold mb-6">Pre-built Packages</h2>
             {packages.length === 0 ? (
-              <p className="text-gray-500">No pre-built packages available right now.</p>
+              <p className="text-neutral-500">No pre-built packages available right now.</p>
             ) : (
               <div className="space-y-6">
                 {packages.map(pkg => (
-                  <div key={pkg.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                  <div key={pkg.id} className="bg-card p-6 rounded-xl shadow-sm border border-border">
                     <h3 className="text-xl font-bold">{pkg.name}</h3>
-                    <p className="text-blue-600 font-semibold mb-4 text-lg">৳{pkg.price} / {pkg.billingType}</p>
-                    <ul className="list-disc pl-5 mb-6 text-gray-600 space-y-2">
+                    <p className="text-primary-600 font-semibold mb-4 text-lg">৳{pkg.price} / {pkg.billingType}</p>
+                    <ul className="list-disc pl-5 mb-6 text-neutral-600 space-y-2">
                       {pkg.features.map(f => <li key={f}>{f}</li>)}
                     </ul>
-                    <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">
+                    <button className="w-full bg-primary-600 text-white py-2 rounded hover:bg-primary-700 transition">
                       Subscribe Now
                     </button>
                   </div>
@@ -88,27 +88,27 @@ export default function SubscriptionsPage() {
           </div>
 
           {/* Custom Package Builder */}
-          <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-            <h2 className="text-2xl font-bold mb-6 text-purple-700">Build Your Custom Package</h2>
-            <p className="text-gray-500 mb-6">Select the features you need. Pay only for what you use.</p>
+          <div className="bg-card p-8 rounded-xl shadow-sm border border-border">
+            <h2 className="text-2xl font-bold mb-6 text-primary-700">Build Your Custom Package</h2>
+            <p className="text-neutral-500 mb-6">Select the features you need. Pay only for what you use.</p>
             
             <div className="space-y-4 mb-8">
               {availableFeatures.map(feature => (
                 <label key={feature} className="flex items-center space-x-3 cursor-pointer">
                   <input 
                     type="checkbox" 
-                    className="form-checkbox h-5 w-5 text-purple-600" 
+                    className="form-checkbox h-5 w-5 text-primary-600" 
                     checked={selectedFeatures.includes(feature)}
                     onChange={() => toggleFeature(feature)}
                   />
-                  <span className="text-gray-700">{feature}</span>
+                  <span className="text-neutral-700">{feature}</span>
                 </label>
               ))}
             </div>
 
             <button 
               onClick={buildCustomPackage}
-              className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition font-semibold"
+              className="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition font-semibold"
             >
               Calculate Price
             </button>
@@ -116,10 +116,10 @@ export default function SubscriptionsPage() {
             {customPackage && (
               <div className="mt-8 p-6 bg-purple-50 rounded-lg border border-purple-100">
                 <h3 className="text-lg font-bold text-purple-900 mb-2">Your Custom Plan</h3>
-                <div className="text-3xl font-bold text-purple-700 mb-4">
+                <div className="text-3xl font-bold text-primary-700 mb-4">
                   ৳{customPackage.price}
                   {customPackage.offer && (
-                    <span className="text-sm ml-2 text-green-600 bg-green-100 px-2 py-1 rounded-full align-middle">
+                    <span className="text-sm ml-2 text-green-600 bg-success-600/20 px-2 py-1 rounded-full align-middle">
                       {customPackage.offer.discount}% OFF Applied!
                     </span>
                   )}
