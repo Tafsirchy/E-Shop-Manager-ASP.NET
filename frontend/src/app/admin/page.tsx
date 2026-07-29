@@ -23,7 +23,7 @@ export default function AdminDashboardPage() {
       .catch(console.error);
   }, []);
 
-  if (!stats) return <div className="p-8 text-center text-gray-500">Loading Admin Dashboard...</div>;
+  if (!stats) return <div className="p-8 text-center text-neutral-500">Loading Admin Dashboard...</div>;
 
   return (
     <div className="min-h-screen p-8 bg-slate-50 text-slate-900">
@@ -38,19 +38,19 @@ export default function AdminDashboardPage() {
 
         {/* Top Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-blue-500">
+          <div className="bg-card p-6 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-blue-500">
             <h3 className="text-sm font-medium text-slate-500 mb-1">Total Revenue</h3>
             <div className="text-2xl font-bold text-slate-800">৳{stats.totalRevenue.toLocaleString()}</div>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-green-500">
+          <div className="bg-card p-6 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-green-500">
             <h3 className="text-sm font-medium text-slate-500 mb-1">Total Orders</h3>
             <div className="text-2xl font-bold text-slate-800">{stats.totalOrders}</div>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-purple-500">
+          <div className="bg-card p-6 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-purple-500">
             <h3 className="text-sm font-medium text-slate-500 mb-1">Total Users</h3>
             <div className="text-2xl font-bold text-slate-800">{stats.totalUsers}</div>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-orange-500">
+          <div className="bg-card p-6 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-orange-500">
             <h3 className="text-sm font-medium text-slate-500 mb-1">Low Stock Alerts</h3>
             <div className="text-2xl font-bold text-slate-800">{stats.lowStockCount}</div>
           </div>
@@ -59,7 +59,7 @@ export default function AdminDashboardPage() {
         {/* Detailed Sections */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="lg:col-span-2 bg-card rounded-xl shadow-sm border border-slate-100 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
               <h2 className="text-lg font-semibold text-slate-800">Recent Orders</h2>
             </div>
@@ -82,7 +82,7 @@ export default function AdminDashboardPage() {
                           <td className="py-4 text-sm text-slate-600">{new Date(order.createdAt).toLocaleDateString()}</td>
                           <td className="py-4 text-sm font-semibold text-slate-800">৳{order.totalAmount}</td>
                           <td className="py-4">
-                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${order.status === 'Pending' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
+                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${order.status === 'Pending' ? 'bg-warning-500/20 text-warning-500' : 'bg-success-600/20 text-success-600'}`}>
                               {order.status}
                             </span>
                           </td>
@@ -97,7 +97,7 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="bg-card rounded-xl shadow-sm border border-slate-100 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
               <h2 className="text-lg font-semibold text-slate-800">System Actions</h2>
             </div>
