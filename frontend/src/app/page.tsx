@@ -2,25 +2,53 @@ import Link from 'next/link';
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background">
-      {/* HERO SECTION */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary-900 via-primary-800 to-primary-900 text-white py-24 sm:py-32">
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight mb-6">
-            Welcome to <span className="text-accent-400">E-Shop</span>
-          </h1>
-          <p className="mt-4 text-xl sm:text-2xl text-primary-100 max-w-3xl mx-auto mb-10">
-            Discover premium products, exclusive subscriptions, and earn rewards on every purchase.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4 items-center">
-            <Link href="/product" className="px-8 py-4 bg-accent-500 hover:bg-accent-600 text-white font-bold rounded-full transition-transform transform hover:scale-105 shadow-lg shadow-accent-500/30 w-full sm:w-auto text-center">
-              Shop Now
-            </Link>
-            <Link href="/subscriptions" className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-bold rounded-full backdrop-blur-sm transition-transform transform hover:scale-105 w-full sm:w-auto text-center">
-              View Packages
-            </Link>
+    <main className="min-h-screen bg-background -mt-16">
+      {/* HERO SECTION - SPLIT SCREEN MINIMALIST */}
+      <section className="relative bg-background overflow-hidden border-b border-border">
+        <div className="max-w-7xl mx-auto">
+          <div className="relative z-10 bg-background pb-8 sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32 pt-16 sm:pt-24 lg:pt-32 px-4 sm:px-6 lg:px-8">
+            <main className="mx-auto max-w-7xl">
+              <div className="sm:text-center lg:text-left">
+                <h1 className="text-5xl tracking-tight font-black text-foreground sm:text-6xl md:text-7xl leading-tight">
+                  <span className="block xl:inline">Premium goods.</span>{' '}
+                  <span className="block text-neutral-400 xl:inline">Minimal effort.</span>
+                </h1>
+                <p className="mt-4 text-base text-neutral-500 sm:mt-6 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-6 md:text-xl lg:mx-0 leading-relaxed">
+                  Discover curated products, build custom subscription packages, and unlock exclusive rewards with every purchase. Experience e-commerce redefined.
+                </p>
+                <div className="mt-8 sm:flex sm:justify-center lg:justify-start gap-4">
+                  <div className="rounded-full">
+                    <Link href="/product" className="w-full flex items-center justify-center px-8 py-4 border border-transparent text-base font-semibold rounded-full text-white bg-foreground hover:bg-neutral-800 transition-all shadow-md hover:shadow-lg md:text-lg">
+                      Shop Collection
+                    </Link>
+                  </div>
+                  <div className="mt-3 sm:mt-0">
+                    <Link href="/subscriptions" className="w-full flex items-center justify-center px-8 py-4 border border-border text-base font-semibold rounded-full text-foreground bg-transparent hover:bg-neutral-50 transition-colors md:text-lg">
+                      Explore Subscriptions
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </main>
           </div>
+        </div>
+        <div className="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2 bg-neutral-100 flex items-center justify-center border-l border-border">
+           {/* Abstract Minimalist Right Side */}
+           <div className="relative w-full h-80 sm:h-96 lg:h-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-neutral-50 to-neutral-200">
+             {/* Decorative Elements */}
+             <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+             <div className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-accent-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+             
+             {/* Floating Premium Card */}
+             <div className="relative z-10 bg-white/60 backdrop-blur-xl border border-white/60 p-6 rounded-3xl shadow-2xl transform lg:rotate-3 hover:rotate-0 transition-all duration-700 hover:scale-105 group">
+               <div className="w-64 h-80 bg-foreground rounded-2xl flex flex-col items-center justify-center text-white relative overflow-hidden shadow-inner">
+                 <div className="absolute inset-0 bg-gradient-to-tr from-neutral-800 to-neutral-900 opacity-90"></div>
+                 <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 to-accent-400 opacity-0 group-hover:opacity-30 blur transition-opacity duration-700"></div>
+                 <span className="text-8xl relative z-10 mb-4 drop-shadow-lg transition-transform duration-700 group-hover:-translate-y-2">✨</span>
+                 <span className="text-sm font-semibold tracking-widest uppercase relative z-10 text-neutral-300">Edition 2026</span>
+               </div>
+             </div>
+           </div>
         </div>
       </section>
 
