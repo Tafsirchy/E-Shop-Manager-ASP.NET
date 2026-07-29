@@ -2,11 +2,11 @@ import Link from 'next/link';
 
 export default function Footer() {
   return (
-    <footer className="bg-neutral-950 text-neutral-400 pt-24 pb-12 border-t border-neutral-900 overflow-hidden relative">
+    <footer className="bg-neutral-950 text-neutral-400 pt-16 pb-8 border-t border-neutral-900 overflow-hidden relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Top Section: Newsletter & Links */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-16 lg:gap-8 mb-24">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-16 lg:gap-8 mb-16">
           
           {/* Newsletter (Left) */}
           <div className="col-span-1 md:col-span-12 lg:col-span-5">
@@ -60,7 +60,7 @@ export default function Footer() {
         </div>
 
         {/* Huge Brand Text */}
-        <div className="w-full flex items-center justify-center border-t border-neutral-900 pt-16 mb-8 overflow-hidden">
+        <div className="w-full flex items-center justify-center border-t border-neutral-900 pt-12 mb-6 overflow-hidden">
            <h1 className="text-[20vw] sm:text-[18vw] leading-none font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-neutral-900 text-center tracking-tighter opacity-20 select-none">
              ESHOP
            </h1>

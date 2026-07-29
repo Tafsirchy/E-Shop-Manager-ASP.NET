@@ -59,10 +59,10 @@ export default function SubscriptionPromo() {
   return (
     <section 
       ref={containerRef}
-      className="relative w-full h-[80vh] min-h-[600px] bg-white overflow-hidden border-b border-neutral-100"
+      className="relative w-full bg-white overflow-hidden border-b border-neutral-100"
     >
       {/* BASE LAYER: Barcode + Brutalist Text */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
         {/* CSS Barcode Background (Abstract) */}
         <div 
           className="absolute inset-0 opacity-5"
@@ -82,10 +82,10 @@ export default function SubscriptionPromo() {
         ></div>
         
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <p className="text-neutral-500 font-bold tracking-[0.4em] uppercase text-sm mb-6">
+          <p className="text-neutral-500 font-bold tracking-[0.4em] uppercase text-sm mb-4">
             Unlock Exclusive Perks
           </p>
-          <h2 className="text-7xl sm:text-8xl lg:text-[10rem] font-black tracking-tighter text-neutral-900 uppercase leading-[0.85] mix-blend-multiply">
+          <h2 className="text-6xl sm:text-7xl lg:text-8xl font-black tracking-tighter text-neutral-900 uppercase leading-[0.85] mix-blend-multiply">
             SCAN TO<br/>SUBSCRIBE
           </h2>
         </div>
@@ -94,7 +94,7 @@ export default function SubscriptionPromo() {
       {/* REVEAL LAYER: The Subscription Packages */}
       {/* As the scanner moves right, everything to its left becomes permanently visible */}
       <div 
-        className="absolute inset-0 z-20 bg-neutral-900 text-white flex items-center transition-all duration-500"
+        className="relative z-20 w-full bg-neutral-900 text-white flex items-center py-24 transition-all duration-500"
         style={
           hasScanned 
           ? { opacity: 1 } // Fully revealed after scan
@@ -105,10 +105,10 @@ export default function SubscriptionPromo() {
         }
       >
          {/* Background Glow inside the reveal */}
-         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary-900/40 via-neutral-900 to-neutral-900 opacity-50"></div>
+         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary-900/40 via-neutral-900 to-neutral-900 opacity-50 pointer-events-none"></div>
 
          {/* Beautiful Subscription UI */}
-         <div className="relative w-full h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-center gap-8">
+         <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-center gap-8">
             
             {/* Intro Text */}
             <div className="flex-1 text-left hidden lg:block">
