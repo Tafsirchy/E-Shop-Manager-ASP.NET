@@ -6,10 +6,12 @@ namespace EShopManager.API.Services
     public class OrderService
     {
         private readonly IMongoCollection<Order> _orderCollection;
+        private readonly MembershipService _membershipService;
 
-        public OrderService(IMongoDatabase mongoDatabase)
+        public OrderService(IMongoDatabase mongoDatabase, MembershipService membershipService)
         {
             _orderCollection = mongoDatabase.GetCollection<Order>("Orders");
+            _membershipService = membershipService;
         }
 
         public async Task<Order?> GetOrderAsync(string id) =>
@@ -27,6 +29,11 @@ namespace EShopManager.API.Services
             order.ApplyDiscount();
             
             await _orderCollection.InsertOneAsync(order);
+            
+            // Integrate Membership & Rewards Core
+            // Accumulate spending points for the user
+            await _membershipService.AccumulateSpendingAsync(order.UserId, order.TotalAmount);
+            
             return order;
         }
 
