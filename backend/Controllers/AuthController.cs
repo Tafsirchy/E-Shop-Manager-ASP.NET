@@ -12,20 +12,36 @@ namespace EShopManager.API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IConfiguration _configuration;
+        private readonly EShopManager.API.Services.CartService _cartService;
+        private readonly EShopManager.API.Services.WishlistService _wishlistService;
 
-        public AuthController(IConfiguration configuration)
+        public AuthController(IConfiguration configuration, EShopManager.API.Services.CartService cartService, EShopManager.API.Services.WishlistService wishlistService)
         {
             _configuration = configuration;
+            _cartService = cartService;
+            _wishlistService = wishlistService;
         }
 
         [HttpPost("login")]
-        public IActionResult Login([FromBody] LoginRequest request)
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             // TODO: Validate against MongoDB users collection
             // Hardcoded check for initial testing
             if (request.Email == "admin@eshop.com" && request.Password == "admin")
             {
                 var token = GenerateJwtToken(request.Email, "Admin");
+
+                // If guest session provided, merge guest data into user account
+                if (!string.IsNullOrEmpty(request.GuestSessionId))
+                {
+                    try
+                    {
+                        await _cartService.MergeGuestIntoUserAsync(request.GuestSessionId!, request.Email);
+                        await _wishlistService.MergeGuestIntoUserAsync(request.GuestSessionId!, request.Email);
+                    }
+                    catch { /* swallow merge errors for now */ }
+                }
+
                 return Ok(new { token });
             }
 
@@ -67,5 +83,6 @@ namespace EShopManager.API.Controllers
     {
         public string Email { get; set; } = null!;
         public string Password { get; set; } = null!;
+        public string? GuestSessionId { get; set; }
     }
 }

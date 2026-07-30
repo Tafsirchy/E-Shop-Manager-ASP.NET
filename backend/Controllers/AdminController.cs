@@ -22,5 +22,25 @@ namespace EShopManager.API.Controllers
             var stats = await _analyticsService.GetDashboardStatsAsync();
             return Ok(stats);
         }
+        
+            [HttpPost("merge-guest")] 
+            public async Task<IActionResult> MergeGuest([FromBody] MergeGuestRequest req)
+            {
+                // This endpoint can be used for migration: merge guestSessionId into userId
+                // Note: For simplicity we resolve services from DI here.
+                var cartService = HttpContext.RequestServices.GetRequiredService<EShopManager.API.Services.CartService>();
+                var wishlistService = HttpContext.RequestServices.GetRequiredService<EShopManager.API.Services.WishlistService>();
+
+                var cartRes = await cartService.MergeGuestIntoUserAsync(req.GuestSessionId, req.UserId);
+                await wishlistService.MergeGuestIntoUserAsync(req.GuestSessionId, req.UserId);
+
+                return Ok(new { mergedCartCount = cartRes.Items.Count, conflicts = cartRes.Conflicts });
+            }
     }
+    
+        public class MergeGuestRequest
+        {
+            public string GuestSessionId { get; set; } = null!;
+            public string UserId { get; set; } = null!;
+        }
 }

@@ -8,7 +8,7 @@ namespace EShopManager.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // Requires login
+    [Authorize]
     public class CartController : ControllerBase
     {
         private readonly CartService _cartService;
@@ -30,8 +30,13 @@ namespace EShopManager.API.Controllers
         [HttpPost("items")]
         public async Task<IActionResult> AddItem(CartItem item)
         {
-            await _cartService.AddToCartAsync(GetUserId(), item);
-            return Ok();
+            var res = await _cartService.AddToCartAsync(GetUserId(), item);
+            if (!res.Success)
+            {
+                return BadRequest(new { success = false, message = res.Message, available = res.Available });
+            }
+
+            return Ok(new { success = true, cart = res.Payload });
         }
 
         [HttpDelete("items/{productId}")]

@@ -32,6 +32,7 @@ if (mongoDbSettings != null)
     // Register application services
     builder.Services.AddScoped<EShopManager.API.Services.ProductService>();
     builder.Services.AddScoped<EShopManager.API.Services.CartService>();
+    builder.Services.AddScoped<EShopManager.API.Services.WishlistService>();
     builder.Services.AddScoped<EShopManager.API.Services.OrderService>();
     builder.Services.AddScoped<EShopManager.API.Services.SubscriptionService>();
     builder.Services.AddScoped<EShopManager.API.Services.MembershipService>();
@@ -74,5 +75,20 @@ app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Seed the database with initial products if needed
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<IMongoDatabase>();
+    try
+    {
+        await EShopManager.API.Data.DatabaseSeeder.SeedAsync(db);
+    }
+    catch (Exception ex)
+    {
+        // Log seeding failure to console. Do not prevent app from starting.
+        Console.WriteLine($"Database seeding failed: {ex.Message}");
+    }
+}
 
 app.Run();
