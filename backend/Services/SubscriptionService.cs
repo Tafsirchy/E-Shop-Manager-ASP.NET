@@ -28,7 +28,9 @@ namespace EShopManager.API.Services
             await _packageCollection.InsertOneAsync(package);
 
         // Custom Package Builder Logic
-        public SubscriptionPackage BuildCustomPackage(List<string> features, decimal basePricePerFeature, decimal userSpentTotal)
+        // The discount threshold is based on the user's verified lifetime spend,
+        // never on client-supplied input.
+        public SubscriptionPackage BuildCustomPackage(List<string> features, decimal basePricePerFeature, decimal userTotalSpent)
         {
             var totalPrice = features.Count * basePricePerFeature;
             var package = new SubscriptionPackage
@@ -40,7 +42,7 @@ namespace EShopManager.API.Services
             };
 
             // Dynamic threshold offer auto-apply engine
-            if (userSpentTotal >= 2000) 
+            if (userTotalSpent >= 2000) 
             {
                 package.Offer = new SubscriptionOffer { Threshold = 2000, Discount = 10 }; // 10% off
                 package.Price -= (package.Price * 0.10m);
@@ -59,6 +61,26 @@ namespace EShopManager.API.Services
             {
                 UserId = userId,
                 PackageId = packageId,
+                NextBillingDate = package.BillingType == "Monthly" ? DateTime.UtcNow.AddMonths(1) : null
+            };
+
+            await _userSubCollection.InsertOneAsync(subscription);
+            return subscription;
+        }
+
+        public async Task<UserSubscription> SubscribeCustomAsync(string userId, List<string> features, decimal userTotalSpent)
+        {
+            if (features == null || features.Count == 0)
+                throw new Exception("Select at least one feature for a custom package.");
+
+            var package = BuildCustomPackage(features, 500m, userTotalSpent);
+            package.IsActive = true;
+            await _packageCollection.InsertOneAsync(package);
+
+            var subscription = new UserSubscription
+            {
+                UserId = userId,
+                PackageId = package.Id!,
                 NextBillingDate = package.BillingType == "Monthly" ? DateTime.UtcNow.AddMonths(1) : null
             };
 
