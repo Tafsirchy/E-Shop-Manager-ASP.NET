@@ -39,11 +39,28 @@ namespace EShopManager.API.Controllers
             return Ok(new { success = true, cart = res.Payload });
         }
 
-        [HttpDelete("items/{productId}")]
-        public async Task<IActionResult> RemoveItem(string productId)
+        [HttpDelete("items/{itemId}")]
+        public async Task<IActionResult> RemoveItem(string itemId, [FromQuery] string? variantId = null)
         {
-            await _cartService.RemoveFromCartAsync(GetUserId(), productId);
+            await _cartService.RemoveFromCartAsync(GetUserId(), itemId, variantId);
             return NoContent();
         }
+
+        [HttpPut("items/{itemId}")]
+        public async Task<IActionResult> UpdateItemQuantity(string itemId, [FromBody] UpdateQuantityRequest request)
+        {
+            var res = await _cartService.UpdateQuantityAsync(GetUserId(), itemId, request.Quantity);
+            if (!res.Success)
+            {
+                return BadRequest(new { success = false, message = res.Message, available = res.Available });
+            }
+
+            return Ok(new { success = true, cart = res.Payload });
+        }
+    }
+
+    public class UpdateQuantityRequest
+    {
+        public int Quantity { get; set; }
     }
 }
