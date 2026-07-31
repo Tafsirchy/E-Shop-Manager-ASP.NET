@@ -1,17 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import WishlistToggle from "@/components/WishlistToggle";
+import { apiFetch, errorMessage } from "@/lib/api";
+import { addToCart } from "@/lib/cart";
 
-function getGuestId() {
-  if (typeof window === 'undefined') return 'guest';
-  let id = localStorage.getItem('EShopGuest');
-  if (!id) {
-    id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
-    localStorage.setItem('EShopGuest', id);
-  }
-  return id;
-}
+const CATEGORIES = [
+  { value: "tshirts", label: "T-Shirts & Tops" },
+  { value: "hoodies", label: "Hoodies & Sweatshirts" },
+  { value: "jackets", label: "Jackets & Outerwear" },
+  { value: "pants", label: "Pants & Denim" },
+  { value: "activewear", label: "Activewear" },
+  { value: "dresses", label: "Dresses" },
+  { value: "tops", label: "Tops & Blouses" },
+  { value: "knitwear", label: "Knitwear" },
+  { value: "jeans", label: "Jeans & Skirts" },
+  { value: "swimwear", label: "Swimwear" },
+  { value: "bags", label: "Bags & Backpacks" },
+  { value: "jewelry", label: "Jewelry & Watches" },
+  { value: "sunglasses", label: "Sunglasses" },
+  { value: "hats", label: "Hats & Beanies" },
+  { value: "shoes", label: "Footwear" },
+];
 
 interface Product {
   id: string;
@@ -24,61 +35,94 @@ interface Product {
   createdAt?: string;
 }
 
-export default function ProductPage() {
+function applySort(items: Product[], sortKey: string) {
+  if (!sortKey) return items;
+  const copy = [...items];
+  switch (sortKey) {
+    case "new":
+      return copy.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    case "price-asc":
+      return copy.sort((a, b) => a.price - b.price);
+    case "price-desc":
+      return copy.sort((a, b) => b.price - a.price);
+    case "stock":
+      return copy.sort((a, b) => b.stock - a.stock);
+    case "name-asc":
+      return copy.sort((a, b) => a.name.localeCompare(b.name));
+    default:
+      return items;
+  }
+}
+
+function ProductList() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const urlCategory = searchParams.get("category") ?? "";
+  const urlSort = searchParams.get("sort") ?? "";
+
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("");
-
-  const fetchProducts = async () => {
-    try {
-      const query = new URLSearchParams();
-      if (search) query.append("search", search);
-
-      const res = await fetch(`http://localhost:5000/api/products?${query.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
-        // Apply client-side sorting if requested
-        const sorted = applySort(data, sort);
-        setProducts(sorted);
-      }
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    }
-  };
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [addingId, setAddingId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchProducts();
-  }, [search, sort]);
+    let ignore = false;
+    const query = new URLSearchParams();
+    if (search) query.append("search", search);
+    if (urlCategory) query.append("category", urlCategory);
 
-  function applySort(items: Product[], sortKey: string) {
-    if (!sortKey) return items;
+    apiFetch<Product[]>(`/api/products?${query.toString()}`, { method: "GET", auth: false })
+      .then(data => {
+        if (!ignore) {
+          // Server filters by category/search; apply sort client-side as before.
+          setProducts(applySort(data, urlSort));
+          setError(null);
+        }
+      })
+      .catch(e => {
+        if (!ignore) {
+          setError(errorMessage(e, "Failed to load products."));
+          setProducts([]);
+        }
+      })
+      .finally(() => { if (!ignore) setLoading(false); });
+    return () => { ignore = true; };
+  }, [search, urlCategory, urlSort]);
 
-    const copy = [...items];
-    switch (sortKey) {
-      case 'new':
-        return copy.sort((a, b) => {
-          const da = new Date((a as any).createdAt || a.createdAt || 0).getTime();
-          const db = new Date((b as any).createdAt || b.createdAt || 0).getTime();
-          return db - da;
-        });
-      case 'price-asc':
-        return copy.sort((a, b) => a.price - b.price);
-      case 'price-desc':
-        return copy.sort((a, b) => b.price - a.price);
-      case 'stock':
-        return copy.sort((a, b) => b.stock - a.stock);
-      case 'name-asc':
-        return copy.sort((a, b) => a.name.localeCompare(b.name));
-      default:
-        return items;
+  const handleCategory = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set("category", value);
+    else params.delete("category");
+    router.replace(`${pathname}?${params.toString()}`);
+  };
+
+  const handleSort = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set("sort", value);
+    else params.delete("sort");
+    router.replace(`${pathname}?${params.toString()}`);
+  };
+
+  const handleAddToCart = async (product: Product) => {
+    setAddingId(product.id);
+    try {
+      await addToCart(product.id, 1);
+      window.dispatchEvent(new CustomEvent("eshop:cart-updated"));
+    } catch (e) {
+      alert(errorMessage(e, "Unable to add to cart"));
+    } finally {
+      setAddingId(null);
     }
-  }
+  };
 
   return (
     <main className="min-h-screen p-8 bg-background">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-bold text-foreground mb-8">E-Shop Products</h1>
-        
+
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <input
@@ -90,8 +134,18 @@ export default function ProductPage() {
           />
           <select
             className="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-card text-foreground"
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
+            value={urlCategory}
+            onChange={(e) => handleCategory(e.target.value)}
+          >
+            <option value="">All Categories</option>
+            {CATEGORIES.map(c => (
+              <option key={c.value} value={c.value}>{c.label}</option>
+            ))}
+          </select>
+          <select
+            className="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-card text-foreground"
+            value={urlSort}
+            onChange={(e) => handleSort(e.target.value)}
           >
             <option value="">Sort: Default</option>
             <option value="new">Sort: Newest</option>
@@ -102,13 +156,16 @@ export default function ProductPage() {
           </select>
         </div>
 
-        {/* Product Grid */}
-        {products.length > 0 ? (
+        {error && <p className="text-red-500 mb-6">{error}</p>}
+        {loading ? (
+          <div className="text-center py-20 text-neutral-500">Loading products...</div>
+        ) : products.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {products.map((product) => (
               <div key={product.id} className="bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow p-5 border border-border flex flex-col">
                 <div className="h-48 bg-neutral-100 rounded-lg mb-4 flex items-center justify-center overflow-hidden relative">
                   {product.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-neutral-400">No Image</span>
@@ -121,26 +178,16 @@ export default function ProductPage() {
                 <p className="text-sm text-neutral-500 mb-2">{product.category}</p>
                 <div className="mt-auto flex items-center justify-between gap-3">
                   <span className="text-xl font-bold text-foreground">৳{product.price}</span>
-                  <span className={`text-sm font-medium px-2 py-1 rounded-full ${product.stock > 10 ? 'bg-success-600/20 text-success-600' : product.stock > 0 ? 'bg-warning-500/20 text-warning-500' : 'bg-danger-500/20 text-danger-500'}`}>
-                    {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+                  <span className={`text-sm font-medium px-2 py-1 rounded-full ${product.stock > 10 ? "bg-success-600/20 text-success-600" : product.stock > 0 ? "bg-warning-500/20 text-warning-500" : "bg-danger-500/20 text-danger-500"}`}>
+                    {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
                   </span>
                   <button
-                    disabled={product.stock <= 0}
-                    onClick={async () => {
-                      const guest = getGuestId();
-                      const body = { productId: product.id, quantity: 1 };
-                      // optimistic UI: show a quick toast or update not implemented here
-                      const res = await fetch(`/api/cart/guest/${guest}/items`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-                      if (!res.ok) {
-                        const err = await res.json().catch(() => null);
-                        alert(err?.message || 'Unable to add to cart');
-                      } else {
-                        // Optionally refresh mini-cart via custom event
-                        window.dispatchEvent(new CustomEvent('eshop:cart-updated'));
-                      }
-                    }}
-                    className="ml-2 px-4 py-2 bg-accent-500 text-white rounded-lg"
-                  >Add to cart</button>
+                    disabled={product.stock <= 0 || addingId === product.id}
+                    onClick={() => handleAddToCart(product)}
+                    className="ml-2 px-4 py-2 bg-accent-500 text-white rounded-lg disabled:opacity-50"
+                  >
+                    {addingId === product.id ? "Adding..." : "Add to cart"}
+                  </button>
                 </div>
               </div>
             ))}
@@ -152,5 +199,13 @@ export default function ProductPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function ProductPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen p-8 bg-background text-center text-neutral-500">Loading...</div>}>
+      <ProductList />
+    </Suspense>
   );
 }
