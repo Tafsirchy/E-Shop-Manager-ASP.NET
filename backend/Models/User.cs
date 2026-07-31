@@ -7,5 +7,6 @@ namespace EShopManager.API.Models
         public string Email { get; set; } = null!;
         public string PasswordHash { get; set; } = null!;
         public string Role { get; set; } = "Customer"; // Admin or Customer
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }
