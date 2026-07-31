@@ -1,4 +1,5 @@
 using EShopManager.API.Models;
+using EShopManager.API.Services;
 using MongoDB.Driver;
 
 namespace EShopManager.API.Data
@@ -8,6 +9,7 @@ namespace EShopManager.API.Data
         public static async Task SeedAsync(IMongoDatabase database)
         {
             var products = database.GetCollection<Product>("Products");
+            await SeedAdminUserAsync(database);
 
             var categories = new[]
             {
@@ -63,6 +65,33 @@ namespace EShopManager.API.Data
                     await products.ReplaceOneAsync(p => p.Id == prod.Id, prod);
                     idx++;
                 }
+            }
+        }
+
+        private static async Task SeedAdminUserAsync(IMongoDatabase database)
+        {
+            var users = database.GetCollection<User>("Users");
+
+            var existingAdmin = await users.Find(x => x.Email.ToLower() == "admin@eshop.com").FirstOrDefaultAsync();
+            if (existingAdmin != null) return;
+
+            var admin = new User
+            {
+                Name = "Administrator",
+                Email = "admin@eshop.com",
+                PasswordHash = UserService.HashPassword("admin123"),
+                Role = "Admin",
+                CreatedAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                await users.InsertOneAsync(admin);
+                Console.WriteLine("Seeded admin user: admin@eshop.com (password: admin123)");
+            }
+            catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+            {
+                // Admin already exists from a concurrent seed
             }
         }
 
