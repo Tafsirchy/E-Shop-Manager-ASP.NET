@@ -6,10 +6,12 @@ namespace EShopManager.API.Services
     public class WishlistService
     {
         private readonly IMongoCollection<Wishlist> _wishlistCollection;
+        private readonly ProductService _productService;
 
-        public WishlistService(IMongoDatabase db)
+        public WishlistService(IMongoDatabase db, ProductService productService)
         {
             _wishlistCollection = db.GetCollection<Wishlist>("Wishlists");
+            _productService = productService;
         }
 
         public async Task<Wishlist?> GetByUserAsync(string userId) =>
@@ -17,6 +19,15 @@ namespace EShopManager.API.Services
 
         public async Task<Wishlist?> GetByGuestAsync(string guestSessionId) =>
             await _wishlistCollection.Find(x => x.GuestSessionId == guestSessionId).FirstOrDefaultAsync();
+
+        // Returns null if valid, otherwise an error message.
+        public async Task<string?> ValidateProductAsync(string productId)
+        {
+            if (string.IsNullOrWhiteSpace(productId)) return "ProductId is required.";
+            var product = await _productService.GetAsync(productId);
+            if (product == null) return "Product not found.";
+            return null;
+        }
 
         public async Task AddItemAsync(string ownerIdOrGuest, bool isGuest, WishlistItem item)
         {
