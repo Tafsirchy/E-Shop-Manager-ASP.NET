@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
+import { apiFetch, errorMessage } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 interface UserMembership {
   totalSpent: number;
@@ -9,36 +12,66 @@ interface UserMembership {
 }
 
 export default function MembershipPage() {
+  const { token, loading: authLoading } = useAuth();
   const [membership, setMembership] = useState<UserMembership | null>(null);
   const [couponCode, setCouponCode] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [claiming, setClaiming] = useState(false);
 
   useEffect(() => {
-    // In real app, attach JWT token
-    fetch("http://localhost:5000/api/membership", {
-      // headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
-    })
-      .then(res => res.json())
-      .then(data => setMembership(data))
-      .catch(console.error);
-  }, []);
+    if (authLoading || !token) return;
+    apiFetch<UserMembership>("/api/membership")
+      .then(setMembership)
+      .catch((e) => setError(errorMessage(e, "Failed to load membership data.")));
+  }, [authLoading, token]);
 
   const claimCoupon = async () => {
-    const res = await fetch(`http://localhost:5000/api/membership/claim-coupon/${couponCode}`, {
-      method: "POST"
-    });
-    
-    if (res.ok) {
-      setMessage("Coupon claimed successfully! Your points have been deducted.");
-      // Refresh points
-      const updated = await fetch("http://localhost:5000/api/membership").then(r => r.json());
+    if (!couponCode) return;
+    setClaiming(true);
+    setMessage(null);
+    try {
+      const res = await apiFetch<{ message: string }>(`/api/membership/claim-coupon/${couponCode}`, {
+        method: "POST",
+      });
+      setMessage({ text: res.message ?? "Coupon claimed successfully!", ok: true });
+      const updated = await apiFetch<UserMembership>("/api/membership");
       setMembership(updated);
-    } else {
-      setMessage("Failed to claim coupon. Insufficient points or invalid code.");
+    } catch (e) {
+      setMessage({ text: errorMessage(e, "Failed to claim coupon. Insufficient points or invalid code."), ok: false });
+    } finally {
+      setClaiming(false);
     }
   };
 
-  if (!membership) return <div className="p-8 text-center text-neutral-500">Loading your membership data...</div>;
+  if (authLoading) {
+    return <div className="p-8 text-center text-neutral-500">Loading your membership data...</div>;
+  }
+
+  if (!token) {
+    return (
+      <div className="min-h-screen p-8 bg-background text-foreground">
+        <div className="max-w-4xl mx-auto bg-card p-8 rounded-xl shadow-sm border border-border text-center">
+          <h1 className="text-3xl font-bold mb-4">Membership & Rewards</h1>
+          <p className="text-neutral-600 mb-6">Sign in to view your membership tier, rewards, and available coupons.</p>
+          <Link href="/login" className="inline-block bg-primary-600 text-white px-8 py-3 rounded-lg hover:bg-primary-700 font-semibold">
+            Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !membership) {
+    return (
+      <div className="min-h-screen p-8 bg-background text-foreground">
+        <div className="max-w-4xl mx-auto bg-card p-8 rounded-xl shadow-sm border border-border">
+          <h1 className="text-3xl font-bold mb-4">Membership & Rewards</h1>
+          <p className="text-red-500">{error ?? "Membership data unavailable."}</p>
+        </div>
+      </div>
+    );
+  }
 
   const nextTierThreshold = 50000;
   const progressPercentage = Math.min((membership.totalSpent / nextTierThreshold) * 100, 100);
@@ -46,13 +79,13 @@ export default function MembershipPage() {
   return (
     <div className="min-h-screen p-8 bg-background text-foreground">
       <div className="max-w-4xl mx-auto space-y-8">
-        
+
         <h1 className="text-4xl font-bold mb-8">Membership & Rewards</h1>
 
         <div className="bg-card p-8 rounded-xl shadow-sm border border-border flex items-center justify-between">
           <div>
             <h2 className="text-lg text-neutral-500 mb-1">Current Tier</h2>
-            <div className={`text-3xl font-extrabold ${membership.currentRole === 'Premium' ? 'text-amber-500' : 'text-slate-700'}`}>
+            <div className={`text-3xl font-extrabold ${membership.currentRole === "Premium" ? "text-amber-500" : "text-slate-700"}`}>
               {membership.currentRole} Member
             </div>
           </div>
@@ -72,7 +105,7 @@ export default function MembershipPage() {
               <div className="bg-primary-600 h-2.5 rounded-full" style={{ width: `${progressPercentage}%` }}></div>
             </div>
             <p className="text-sm text-neutral-500 mt-3">
-              Spend ৳{nextTierThreshold - membership.totalSpent} more to unlock Premium benefits (10% off all orders)!
+              Spend ৳{(nextTierThreshold - membership.totalSpent).toLocaleString()} more to unlock Premium benefits (10% off all orders)!
             </p>
           </div>
         )}
@@ -87,7 +120,7 @@ export default function MembershipPage() {
           <div className="bg-card p-8 rounded-xl shadow-sm border border-border">
             <h2 className="text-xl font-bold mb-4">Redeem Points</h2>
             <p className="text-neutral-500 text-sm mb-4">Enter a coupon code to redeem your points for discounts on your next order.</p>
-            
+
             <div className="flex gap-2 mb-4">
               <input
                 type="text"
@@ -98,15 +131,16 @@ export default function MembershipPage() {
               />
               <button
                 onClick={claimCoupon}
-                className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition font-semibold"
+                disabled={claiming || !couponCode}
+                className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition font-semibold disabled:opacity-50"
               >
-                Claim
+                {claiming ? "Claiming..." : "Claim"}
               </button>
             </div>
-            
+
             {message && (
-              <div className={`p-3 rounded-lg text-sm ${message.includes("success") ? "bg-success-600/20 text-success-600" : "bg-danger-500/20 text-danger-500"}`}>
-                {message}
+              <div className={`p-3 rounded-lg text-sm ${message.ok ? "bg-success-600/20 text-success-600" : "bg-danger-500/20 text-danger-500"}`}>
+                {message.text}
               </div>
             )}
           </div>
