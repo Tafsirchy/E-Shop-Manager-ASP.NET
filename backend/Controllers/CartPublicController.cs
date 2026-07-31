@@ -32,11 +32,20 @@ namespace EShopManager.API.Controllers
             return Ok(new { success = true, cart = res.Payload });
         }
 
-        [HttpDelete("{guestId}/items/{productId}")]
-        public async Task<IActionResult> RemoveGuestItem(string guestId, string productId)
+        [HttpDelete("{guestId}/items/{itemId}")]
+        public async Task<IActionResult> RemoveGuestItem(string guestId, string itemId, [FromQuery] string? variantId = null)
         {
-            await _cartService.RemoveFromCartAsync(guestId, productId);
+            await _cartService.RemoveFromCartAsync(guestId, itemId, variantId);
             return NoContent();
+        }
+
+        [HttpPut("{guestId}/items/{itemId}")]
+        public async Task<IActionResult> UpdateGuestItemQuantity(string guestId, string itemId, [FromBody] UpdateQuantityRequest request)
+        {
+            var res = await _cartService.UpdateQuantityAsync(guestId, itemId, request.Quantity);
+            if (!res.Success)
+                return BadRequest(new { success = false, message = res.Message, available = res.Available });
+            return Ok(new { success = true, cart = res.Payload });
         }
     }
 }
