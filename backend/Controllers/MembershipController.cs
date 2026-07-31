@@ -27,9 +27,9 @@ namespace EShopManager.API.Controllers
         [HttpPost("claim-coupon/{code}")]
         public async Task<IActionResult> ClaimCoupon(string code)
         {
-            var success = await _membershipService.ClaimCouponAsync(GetUserId(), code);
-            if (success) return Ok(new { message = "Coupon claimed successfully!" });
-            return BadRequest("Insufficient points or invalid coupon");
+            var error = await _membershipService.ClaimCouponAsync(GetUserId(), code);
+            if (error == null) return Ok(new { message = "Coupon claimed successfully!" });
+            return BadRequest(error);
         }
         
         [Authorize(Roles = "Admin")]
