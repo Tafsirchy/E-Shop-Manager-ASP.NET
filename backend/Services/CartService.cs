@@ -87,7 +87,7 @@ namespace EShopManager.API.Services
             return new CartOperationResult { Success = true, Payload = cart };
         }
 
-        public async Task RemoveFromCartAsync(string userId, string productId)
+        public async Task RemoveFromCartAsync(string userId, string productId, string? variantId = null)
         {
             var cart = await GetCartAsync(userId);
             if (cart != null)
@@ -97,7 +97,9 @@ namespace EShopManager.API.Services
                 while (attempt < 2)
                 {
                     var currentVersion = cart.Version;
-                    cart.Items.RemoveAll(x => x.ProductId == productId);
+                    cart.Items.RemoveAll(x =>
+                        x.ItemId == productId || // allow removing by cart ItemId
+                        (x.ProductId == productId && (variantId == null || x.VariantId == variantId)));
                     cart.UpdatedAt = DateTime.UtcNow;
                     cart.Version = currentVersion + 1;
 
@@ -115,6 +117,55 @@ namespace EShopManager.API.Services
                     attempt++;
                 }
             }
+        }
+
+        public async Task<CartOperationResult> UpdateQuantityAsync(string userId, string itemId, int newQuantity)
+        {
+            if (newQuantity < 1) return new CartOperationResult { Success = false, Message = "Quantity must be at least 1." };
+
+            var cart = await GetCartAsync(userId);
+            if (cart == null) return new CartOperationResult { Success = false, Message = "Cart not found." };
+
+            var item = cart.Items.FirstOrDefault(x => x.ItemId == itemId);
+            if (item == null) return new CartOperationResult { Success = false, Message = "Item not found in cart." };
+
+            var product = await _productService.GetAsync(item.ProductId);
+            if (product == null) return new CartOperationResult { Success = false, Message = "Product not found." };
+
+            if (newQuantity > product.Stock)
+            {
+                return new CartOperationResult
+                {
+                    Success = false,
+                    Message = "Requested quantity exceeds available stock.",
+                    Available = product.Stock
+                };
+            }
+
+            var attempt = 0;
+            while (attempt < 3)
+            {
+                var currentVersion = cart.Version;
+                item.Quantity = newQuantity;
+                cart.UpdatedAt = DateTime.UtcNow;
+                cart.Version = currentVersion + 1;
+
+                var filter = Builders<Cart>.Filter.And(
+                    Builders<Cart>.Filter.Eq(x => x.Id, cart.Id),
+                    Builders<Cart>.Filter.Eq(x => x.Version, currentVersion)
+                );
+
+                var res = await _cartCollection.ReplaceOneAsync(filter, cart);
+                if (res.ModifiedCount > 0) return new CartOperationResult { Success = true, Payload = cart };
+
+                cart = await GetCartAsync(userId);
+                if (cart == null) return new CartOperationResult { Success = false, Message = "Cart not found." };
+                item = cart.Items.FirstOrDefault(x => x.ItemId == itemId);
+                if (item == null) return new CartOperationResult { Success = false, Message = "Item not found in cart." };
+                attempt++;
+            }
+
+            return new CartOperationResult { Success = false, Message = "StaleCart" };
         }
 
         public async Task ClearCartAsync(string userId)
