@@ -7,11 +7,13 @@ namespace EShopManager.API.Services
     {
         private readonly IMongoCollection<UserMembership> _membershipCollection;
         private readonly IMongoCollection<Coupon> _couponCollection;
+        private readonly UserService _userService;
 
-        public MembershipService(IMongoDatabase database)
+        public MembershipService(IMongoDatabase database, UserService userService)
         {
             _membershipCollection = database.GetCollection<UserMembership>("UserMemberships");
             _couponCollection = database.GetCollection<Coupon>("Coupons");
+            _userService = userService;
         }
 
         public async Task<UserMembership> GetMembershipAsync(string userId)
@@ -37,24 +39,26 @@ namespace EShopManager.API.Services
             if (mem.TotalSpent >= 50000 && mem.CurrentRole == "Regular") 
             {
                 mem.CurrentRole = "Premium";
+                // Keep the User record in sync so freshly-issued JWTs carry the new role.
+                await _userService.UpdateRoleAsync(userId, "Premium");
             }
 
             await _membershipCollection.ReplaceOneAsync(x => x.Id == mem.Id, mem);
         }
 
-        public async Task<bool> ClaimCouponAsync(string userId, string couponCode)
+        public async Task<string?> ClaimCouponAsync(string userId, string couponCode)
         {
             var coupon = await _couponCollection.Find(x => x.Code == couponCode).FirstOrDefaultAsync();
-            if (coupon == null) return false;
+            if (coupon == null) return "Coupon code not found";
 
             var mem = await GetMembershipAsync(userId);
             if (mem.RewardPoints >= coupon.RequiredPoints)
             {
                 mem.RewardPoints -= coupon.RequiredPoints;
                 await _membershipCollection.ReplaceOneAsync(x => x.Id == mem.Id, mem);
-                return true;
+                return null;
             }
-            return false;
+            return "Insufficient reward points for this coupon";
         }
         
         // Admin method to create coupons
