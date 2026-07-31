@@ -37,6 +37,9 @@ namespace EShopManager.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Post(Product newProduct)
         {
+            var validationError = ValidateProduct(newProduct);
+            if (validationError != null) return BadRequest(new { message = validationError });
+
             await _productService.CreateAsync(newProduct);
             return CreatedAtAction(nameof(Get), new { id = newProduct.Id }, newProduct);
         }
@@ -51,6 +54,9 @@ namespace EShopManager.API.Controllers
             {
                 return NotFound();
             }
+
+            var validationError = ValidateProduct(updatedProduct);
+            if (validationError != null) return BadRequest(new { message = validationError });
 
             updatedProduct.Id = product.Id;
             await _productService.UpdateAsync(id, updatedProduct);
@@ -78,5 +84,14 @@ namespace EShopManager.API.Controllers
         [HttpGet("low-stock")]
         public async Task<List<Product>> GetLowStock([FromQuery] int threshold = 10) =>
             await _productService.GetLowStockProductsAsync(threshold);
+
+        private static string? ValidateProduct(Product p)
+        {
+            if (string.IsNullOrWhiteSpace(p.Name)) return "Product name is required.";
+            if (string.IsNullOrWhiteSpace(p.Category)) return "Product category is required.";
+            if (p.Price < 0) return "Price cannot be negative.";
+            if (p.Stock < 0) return "Stock cannot be negative.";
+            return null;
+        }
     }
 }
