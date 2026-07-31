@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import dynamic from 'next/dynamic';
+import { useAuth } from "@/lib/auth";
 
 const MiniCart = dynamic(() => import('@/components/MiniCart'), { ssr: false });
 
@@ -10,6 +11,7 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
   const isHovered = useRef(false);
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -173,9 +175,31 @@ export default function Navbar() {
             <MiniCart />
           </div>
 
-          <Link href="/admin" className="text-[14px] font-bold text-foreground border-2 border-foreground px-6 py-2.5 rounded-full hover:bg-foreground hover:text-white transition-colors ml-2">
-            Sign In
-          </Link>
+          {user ? (
+            <div className="flex items-center gap-3 ml-2">
+              {user.role === "Admin" && (
+                <Link href="/admin" className="text-[14px] font-bold text-foreground border-2 border-foreground px-5 py-2.5 rounded-full hover:bg-foreground hover:text-white transition-colors">
+                  Admin
+                </Link>
+              )}
+              <Link href="/membership" className="hidden sm:block text-sm font-semibold text-neutral-600 hover:text-primary-600 transition max-w-[10rem] truncate">
+                Hi, {user.name.split(" ")[0]}
+              </Link>
+              <button
+                onClick={() => {
+                  logout();
+                  window.dispatchEvent(new CustomEvent("eshop:cart-updated"));
+                }}
+                className="text-[14px] font-bold text-foreground border-2 border-foreground px-6 py-2.5 rounded-full hover:bg-foreground hover:text-white transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <Link href="/login" className="text-[14px] font-bold text-foreground border-2 border-foreground px-6 py-2.5 rounded-full hover:bg-foreground hover:text-white transition-colors ml-2">
+              Sign In
+            </Link>
+          )}
         </div>
 
       </nav>
