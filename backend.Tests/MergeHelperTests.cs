@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using EShopManager.API.Services;
 using EShopManager.API.Models;
 using Xunit;
