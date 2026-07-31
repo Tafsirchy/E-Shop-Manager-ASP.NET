@@ -11,10 +11,12 @@ namespace EShopManager.API.Controllers
     public class SubscriptionsController : ControllerBase
     {
         private readonly SubscriptionService _subscriptionService;
+        private readonly MembershipService _membershipService;
 
-        public SubscriptionsController(SubscriptionService subscriptionService)
+        public SubscriptionsController(SubscriptionService subscriptionService, MembershipService membershipService)
         {
             _subscriptionService = subscriptionService;
+            _membershipService = membershipService;
         }
 
         private string GetUserId() => User.FindFirst(ClaimTypes.Email)?.Value ?? "guest";
@@ -33,11 +35,27 @@ namespace EShopManager.API.Controllers
 
         [Authorize]
         [HttpPost("custom/build")]
-        public IActionResult BuildCustomPackage([FromBody] List<string> features, [FromQuery] decimal userSpentTotal = 0)
+        public async Task<IActionResult> BuildCustomPackage([FromBody] List<string> features)
         {
-            // Base price per feature is 500
-            var package = _subscriptionService.BuildCustomPackage(features, 500m, userSpentTotal);
+            var membership = await _membershipService.GetMembershipAsync(GetUserId());
+            var package = _subscriptionService.BuildCustomPackage(features ?? new List<string>(), 500m, membership.TotalSpent);
             return Ok(package);
+        }
+
+        [Authorize]
+        [HttpPost("custom/purchase")]
+        public async Task<IActionResult> PurchaseCustomPackage([FromBody] List<string> features)
+        {
+            var membership = await _membershipService.GetMembershipAsync(GetUserId());
+            try
+            {
+                var sub = await _subscriptionService.SubscribeCustomAsync(GetUserId(), features ?? new List<string>(), membership.TotalSpent);
+                return Ok(sub);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [Authorize]
