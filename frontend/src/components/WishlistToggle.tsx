@@ -1,19 +1,27 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { apiFetch, getGuestId, getToken } from "@/lib/api";
 
 interface Props {
   productId: string;
   variantId?: string | null;
 }
 
-function getGuestId() {
-  if (typeof window === 'undefined') return 'guest';
-  let id = localStorage.getItem('EShopGuest');
-  if (!id) {
-    id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
-    localStorage.setItem('EShopGuest', id);
-  }
-  return id;
+interface Wishlist {
+  items?: WishlistItem[];
+}
+
+interface WishlistItem {
+  itemId?: string;
+  productId: string;
+  variantId?: string | null;
+}
+
+function wishlistPath(suffix = ""): string {
+  const token = getToken();
+  if (token) return `/api/wishlist${suffix}`;
+  const guest = getGuestId();
+  return `/api/wishlist/guest/${guest}${suffix}`;
 }
 
 export default function WishlistToggle({ productId, variantId }: Props) {
@@ -23,14 +31,13 @@ export default function WishlistToggle({ productId, variantId }: Props) {
 
   useEffect(() => {
     const fetchWishlist = async () => {
-      const guest = getGuestId();
       try {
-        const res = await fetch(`/api/wishlist/user/${guest}`);
-        if (!res.ok) { setLoading(false); return; }
-        const data = await res.json();
-        const found = (data.items || []).find((i: any) => i.productId === productId && (i.variantId || null) === (variantId || null));
-        if (found) { setSaved(true); setItemId(found.itemId); }
-      } catch (e) {
+        const data = await apiFetch<Wishlist>(wishlistPath());
+        const found = (data.items || []).find(
+          (i) => i.productId === productId && (i.variantId || null) === (variantId || null)
+        );
+        if (found) { setSaved(true); setItemId(found.itemId ?? null); }
+      } catch {
         // ignore
       }
       setLoading(false);
@@ -39,37 +46,34 @@ export default function WishlistToggle({ productId, variantId }: Props) {
   }, [productId, variantId]);
 
   const toggle = async () => {
-    const guest = getGuestId();
     if (saved) {
-      // optimistic
+      if (!itemId) return;
       const prevId = itemId;
       setSaved(false);
       try {
-        await fetch(`/api/wishlist/user/${guest}/items/${prevId}`, { method: 'DELETE' });
-      } catch (e) {
+        await apiFetch<void>(wishlistPath(`/items/${prevId}`), { method: "DELETE" });
+      } catch {
         setSaved(true);
       }
     } else {
       setSaved(true);
       try {
-        const body = { productId, variantId };
-        const res = await fetch(`/api/wishlist/user/${guest}/items`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-        if (res.ok) {
-          const data = await res.json();
-          // server returns the wishlist object — find itemId
-          const found = (data.items || []).find((i: any) => i.productId === productId && (i.variantId || null) === (variantId || null));
-          if (found) setItemId(found.itemId);
-        } else {
-          setSaved(false);
-        }
-      } catch (e) {
+        const data = await apiFetch<Wishlist>(wishlistPath("/items"), {
+          method: "POST",
+          body: { productId, variantId },
+        });
+        const found = (data.items || []).find(
+          (i) => i.productId === productId && (i.variantId || null) === (variantId || null)
+        );
+        if (found) setItemId(found.itemId ?? null);
+      } catch {
         setSaved(false);
       }
     }
   };
 
   return (
-    <button aria-pressed={saved} onClick={toggle} disabled={loading} className="p-2 rounded-full hover:bg-neutral-100">
+    <button aria-pressed={saved} onClick={toggle} disabled={loading} className="p-2 rounded-full hover:bg-neutral-100" aria-label="Toggle wishlist">
       {saved ? (
         <svg className="w-6 h-6 text-red-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 3.99 4 6.5 4c1.74 0 3.41.81 4.5 2.09C12.09 4.81 13.76 4 15.5 4 18.01 4 20 6 20 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
       ) : (
