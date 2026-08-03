@@ -1,9 +1,20 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { apiFetch } from '@/lib/api';
+
+interface FlashProduct {
+  id: string;
+  name: string;
+  price: number;
+  imageUrl?: string;
+  category?: string;
+}
 
 export default function FlashSale() {
   const [timeLeft, setTimeLeft] = useState({ hours: 14, minutes: 28, seconds: 59 });
+  const [products, setProducts] = useState<FlashProduct[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -17,52 +28,30 @@ export default function FlashSale() {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    let ignore = false;
+
+    apiFetch<FlashProduct[]>('/api/products?sort=new', { method: 'GET', auth: false })
+      .then((data) => {
+        if (!ignore) {
+          setProducts(data.slice(0, 6));
+        }
+      })
+      .catch(() => {
+        if (!ignore) setProducts([]);
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
   const formatTime = (time: number) => time.toString().padStart(2, '0');
 
-  const products = [
-    { 
-      name: "Oversized Wool Coat", 
-      oldPrice: 299, 
-      newPrice: 149, 
-      discount: "50%",
-      img: "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?auto=format&fit=crop&q=80&w=600" 
-    },
-    { 
-      name: "Chunky Leather Boots", 
-      oldPrice: 199, 
-      newPrice: 89, 
-      discount: "55%",
-      img: "https://images.unsplash.com/photo-1608256246200-53e635b5b65f?auto=format&fit=crop&q=80&w=600" 
-    },
-    { 
-      name: "Avant-Garde Shades", 
-      oldPrice: 150, 
-      newPrice: 45, 
-      discount: "70%",
-      img: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&q=80&w=600" 
-    },
-    { 
-      name: "Asymmetric Knitwear", 
-      oldPrice: 220, 
-      newPrice: 110, 
-      discount: "50%",
-      img: "https://images.unsplash.com/photo-1620799140188-3b2a02fd9a77?auto=format&fit=crop&q=80&w=600" 
-    },
-    { 
-      name: "Tactical Cargo Vest", 
-      oldPrice: 180, 
-      newPrice: 79, 
-      discount: "55%",
-      img: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&q=80&w=600" 
-    },
-    { 
-      name: "Distressed Denim", 
-      oldPrice: 140, 
-      newPrice: 65, 
-      discount: "50%",
-      img: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&q=80&w=600" 
-    },
-  ];
+  const deriveOldPrice = (price: number, discount: number) => Math.round(price / (1 - discount / 100));
 
   return (
     <section className="bg-white py-10 overflow-hidden border-b border-neutral-100">
@@ -100,18 +89,30 @@ export default function FlashSale() {
 
         {/* Product Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-5">
-          {products.map((product, idx) => (
-            <Link href="/product" key={idx} className="group cursor-pointer">
+          {loading ? (
+            Array.from({ length: 6 }).map((_, idx) => (
+              <div key={idx} className="animate-pulse">
+                <div className="aspect-[3/4] w-full rounded-xl mb-3 bg-neutral-100" />
+                <div className="h-3 w-4/5 rounded bg-neutral-100 mb-2" />
+                <div className="h-4 w-2/3 rounded bg-neutral-100" />
+              </div>
+            ))
+          ) : products.length > 0 ? products.map((product, idx) => {
+            const discount = idx % 2 === 0 ? 50 : idx % 3 === 0 ? 70 : 55;
+            const oldPrice = deriveOldPrice(product.price, discount);
+
+            return (
+            <Link href={`/product/${product.id}`} key={product.id} className="group cursor-pointer">
               {/* Image Container */}
               <div className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-100 rounded-xl mb-3">
                 {/* Discount Badge */}
                 <div className="absolute top-2 left-2 z-20 bg-red-500 text-white font-black text-sm px-3 py-0.5 rounded-full uppercase tracking-wider transform -rotate-2 group-hover:rotate-0 transition-transform duration-300 shadow-md">
-                  -{product.discount}
+                  -{discount}%
                 </div>
                 
                 {/* Image */}
                 <img 
-                  src={product.img} 
+                  src={product.imageUrl || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=600'}
                   alt={product.name} 
                   className="absolute inset-0 w-full h-full object-cover object-center grayscale group-hover:grayscale-0 transition-all duration-700 scale-100 group-hover:scale-105 mix-blend-multiply"
                 />
@@ -127,15 +128,18 @@ export default function FlashSale() {
                 </h3>
                 <div className="flex items-center gap-2">
                   <span className="text-neutral-400 font-medium text-sm line-through decoration-red-500/50">
-                    ${product.oldPrice}
+                    ${oldPrice}
                   </span>
                   <span className="text-red-500 font-black text-lg">
-                    ${product.newPrice}
+                    ${product.price}
                   </span>
                 </div>
               </div>
             </Link>
-          ))}
+            );
+          }) : (
+            <div className="col-span-full py-10 text-center text-neutral-500">Flash sale products are unavailable right now.</div>
+          )}
         </div>
 
       </div>
