@@ -2,6 +2,7 @@ using EShopManager.API.Models;
 using EShopManager.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace EShopManager.API.Controllers
 {
@@ -31,6 +32,15 @@ namespace EShopManager.API.Controllers
             }
 
             return product;
+        }
+
+        [HttpGet("details/{id:length(24)}")]
+        public async Task<ActionResult<Product>> GetDetails(string id)
+        {
+            var product = await _productService.GetAsync(id);
+            if (product is null) return NotFound();
+
+            return Ok(product);
         }
 
         [Authorize(Roles = "Admin")]
