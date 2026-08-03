@@ -2,15 +2,32 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import dynamic from 'next/dynamic';
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { apiFetch } from "@/lib/api";
 
 const MiniCart = dynamic(() => import('@/components/MiniCart'), { ssr: false });
 
+interface SearchProduct {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  imageUrl?: string;
+}
+
 export default function Navbar() {
+  const router = useRouter();
   const [isVisible, setIsVisible] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchProduct[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
   const isHovered = useRef(false);
+  const searchRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const { user, logout } = useAuth();
 
   useEffect(() => {
@@ -54,15 +71,66 @@ export default function Navbar() {
       }, 1500);
     }
 
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mousedown", handleClickOutside);
       if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isSearchOpen) {
+      setSearchResults([]);
+      return;
+    }
+
+    const query = searchQuery.trim();
+    if (!query) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    const timeout = window.setTimeout(async () => {
+      try {
+        setIsSearching(true);
+        const data = await apiFetch<SearchProduct[]>(`/api/products?search=${encodeURIComponent(query)}`, { method: "GET", auth: false });
+        setSearchResults(data.slice(0, 5));
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [isSearchOpen, searchQuery]);
+
+  useEffect(() => {
+    if (isSearchOpen) {
+      inputRef.current?.focus();
+    }
+  }, [isSearchOpen]);
+
+  const submitSearch = (value?: string) => {
+    const nextValue = (value ?? searchQuery).trim();
+    if (!nextValue) return;
+
+    setIsSearchOpen(false);
+    setSearchQuery(nextValue);
+    router.push(`/product?search=${encodeURIComponent(nextValue)}`);
+  };
 
   return (
     <div className="sticky top-0 z-50 w-full">
@@ -167,9 +235,75 @@ export default function Navbar() {
         
         {/* RIGHT: Utility Icons */}
         <div className="flex items-center gap-6">
-          <button className="text-foreground hover:text-primary-600 transition" aria-label="Search">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-          </button>
+          <div ref={searchRef} className="relative">
+            <button
+              className="text-foreground hover:text-primary-600 transition"
+              aria-label="Search products"
+              onClick={() => setIsSearchOpen(prev => !prev)}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </button>
+
+            {isSearchOpen && (
+              <div className="absolute right-0 top-12 w-[320px] sm:w-[380px] rounded-2xl border border-neutral-200 bg-white p-3 shadow-2xl">
+                <div className="flex items-center gap-2 rounded-full border border-neutral-200 px-3 py-2">
+                  <svg className="h-4 w-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                  <input
+                    ref={inputRef}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        submitSearch();
+                      }
+                    }}
+                    placeholder="Search for products..."
+                    className="w-full border-none bg-transparent text-sm outline-none text-foreground"
+                  />
+                </div>
+
+                <div className="mt-2 max-h-72 overflow-y-auto">
+                  {isSearching && (
+                    <div className="px-3 py-3 text-sm text-neutral-500">Searching...</div>
+                  )}
+
+                  {!isSearching && searchQuery.trim() && searchResults.length === 0 && (
+                    <div className="px-3 py-3 text-sm text-neutral-500">No products found.</div>
+                  )}
+
+                  {!isSearching && !searchQuery.trim() && (
+                    <div className="px-3 py-3 text-sm text-neutral-500">Try searching for a product name or category.</div>
+                  )}
+
+                  {searchResults.map((product) => (
+                    <button
+                      key={product.id}
+                      type="button"
+                      onClick={() => submitSearch(product.name)}
+                      className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition hover:bg-neutral-50"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{product.name}</p>
+                        <p className="text-xs text-neutral-500">{product.category}</p>
+                      </div>
+                      <span className="text-sm font-medium text-primary-600">৳{product.price}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {searchResults.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => submitSearch()}
+                    className="mt-2 flex w-full items-center justify-center rounded-full border border-neutral-200 px-3 py-2 text-sm font-semibold text-foreground transition hover:bg-neutral-50"
+                  >
+                    View all results
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
           
           <div className="text-foreground hover:text-primary-600 transition relative">
             <MiniCart />
