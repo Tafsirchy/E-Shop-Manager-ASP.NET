@@ -2,13 +2,14 @@
 @{
     var returnUrl = Context.Request.Path + Context.Request.QueryString;
     var inWishlist = ViewBag.InWishlist as bool? ?? false;
+    var cardSrcset = ImageUrls.Srcset(Model.ImageUrl);
 }
 <div class="group relative bg-card rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-border flex flex-col overflow-hidden">
     <div class="img-shimmer h-48 bg-gradient-to-br from-neutral-100 to-neutral-200 rounded-xl mb-4 flex items-center justify-center overflow-hidden relative">
         @if (!string.IsNullOrEmpty(Model.ImageUrl))
         {
             <a asp-controller="Products" asp-action="Details" asp-route-id="@Model.Id" class="absolute inset-0">
-                <img src="@ImageUrls.Sized(Model.ImageUrl, 400)" alt="@Model.Name" width="400" height="300" loading="lazy" decoding="async" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                <img src="@ImageUrls.Sized(Model.ImageUrl, 400)" alt="@Model.Name" width="400" height="300" loading="lazy" decoding="async" @(string.IsNullOrEmpty(cardSrcset) ? null : Html.Raw($"srcset=\"{cardSrcset}\" sizes=\"(max-width: 639px) 100vw, (max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw\"")) class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
             </a>
         }
         else

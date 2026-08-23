@@ -1,6 +1,7 @@
 using EShopManager.API.Models;
 using EShopManager.API.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace EShopManager.API.Controllers.Api
 {
@@ -16,6 +17,7 @@ namespace EShopManager.API.Controllers.Api
         }
 
         [HttpGet]
+        [OutputCache(PolicyName = "CatalogGet30s")]
         public async Task<ActionResult<IEnumerable<Product>>> GetAll(
             [FromQuery] string? search, [FromQuery] string? category,
             [FromQuery] string? sort, [FromQuery] int limit = 50)
@@ -30,6 +32,7 @@ namespace EShopManager.API.Controllers.Api
                 _ => items
             };
 
+            Response.Headers["X-Catalog-Source"] = "api";
             return Ok(items.Take(Math.Clamp(limit, 1, 200)));
         }
 

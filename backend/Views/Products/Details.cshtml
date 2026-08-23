@@ -8,6 +8,7 @@
     gallery = gallery.Distinct().ToList();
     var returnUrl = Context.Request.Path + Context.Request.QueryString;
     var inWishlist = ViewBag.InWishlist as bool? ?? false;
+    var mainSrcset = ImageUrls.Srcset(gallery.FirstOrDefault());
 }
 
 <main class="min-h-screen bg-background px-4 py-8 sm:px-6 lg:px-8">
@@ -36,6 +37,7 @@
                     {
                         <img id="main-image" src="@ImageUrls.Sized(gallery[0], 1000)" alt="@product.Name"
                              width="1000" height="750" fetchpriority="high" decoding="async"
+                             @(string.IsNullOrEmpty(mainSrcset) ? null : Html.Raw($"srcset=\"{mainSrcset}\" sizes=\"(max-width: 1023px) 100vw, 55vw\""))
                              class="h-[480px] w-full object-cover cursor-zoom-in" />
                     }
                     else

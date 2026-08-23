@@ -13,6 +13,16 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 
+// Cache public catalog API responses; Razor pages are excluded because their forms
+// embed per-user antiforgery tokens that must not be shared across visitors.
+builder.Services.AddOutputCache(options =>
+{
+    options.AddPolicy("CatalogGet30s", b => b
+        .Expire(TimeSpan.FromSeconds(30))
+        .SetVaryByQuery("*")
+        .Tag("catalog"));
+});
+
 builder.Services.AddResponseCompression(options =>
 {
     options.EnableForHttps = true;
@@ -106,6 +116,8 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseOutputCache();
 
 app.MapDefaultControllerRoute();
 
