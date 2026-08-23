@@ -61,7 +61,6 @@ namespace EShopManager.API.Services
                 Rating = request.Rating,
                 Title = request.Title,
                 Comment = request.Comment,
-                Images = request.Images ?? new List<string>(),
                 VideoUrl = request.VideoUrl,
                 IsVerifiedPurchase = !string.IsNullOrWhiteSpace(request.OrderId),
                 Status = "pending"
@@ -82,7 +81,6 @@ namespace EShopManager.API.Services
                 .Set(x => x.Rating, request.Rating)
                 .Set(x => x.Title, request.Title)
                 .Set(x => x.Comment, request.Comment)
-                .Set(x => x.Images, request.Images ?? new List<string>())
                 .Set(x => x.VideoUrl, request.VideoUrl)
                 .Set(x => x.UpdatedAt, DateTime.UtcNow)
                 .Set(x => x.EditedAt, DateTime.UtcNow)

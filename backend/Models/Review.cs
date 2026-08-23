@@ -15,7 +15,6 @@ namespace EShopManager.API.Models
         public int Rating { get; set; }
         public string? Title { get; set; }
         public string? Comment { get; set; }
-        public List<string> Images { get; set; } = new();
         public string? VideoUrl { get; set; }
         public bool IsVerifiedPurchase { get; set; }
         public int HelpfulCount { get; set; }
@@ -42,7 +41,6 @@ namespace EShopManager.API.Models
         public int Rating { get; set; }
         public string? Title { get; set; }
         public string? Comment { get; set; }
-        public List<string> Images { get; set; } = new();
         public string? VideoUrl { get; set; }
     }
 
@@ -51,7 +49,6 @@ namespace EShopManager.API.Models
         public int Rating { get; set; }
         public string? Title { get; set; }
         public string? Comment { get; set; }
-        public List<string> Images { get; set; } = new();
         public string? VideoUrl { get; set; }
     }
 
