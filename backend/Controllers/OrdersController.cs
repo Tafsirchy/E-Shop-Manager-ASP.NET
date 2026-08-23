@@ -1,92 +1,61 @@
-using EShopManager.API.Models;
 using EShopManager.API.Services;
+using EShopManager.API.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace EShopManager.API.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
     [Authorize]
-    public class OrdersController : ControllerBase
+    public class OrdersController : Controller
     {
         private static readonly string[] AllowedStatuses =
             { "Pending", "Processing", "Shipped", "Delivered", "Cancelled" };
 
         private readonly OrderService _orderService;
-        private readonly CartService _cartService;
-        private readonly MembershipService _membershipService;
+        private readonly CurrentUser _me;
 
-        public OrdersController(OrderService orderService, CartService cartService, MembershipService membershipService)
+        public OrdersController(OrderService orderService, CurrentUser me)
         {
             _orderService = orderService;
-            _cartService = cartService;
-            _membershipService = membershipService;
+            _me = me;
         }
 
-        private string GetUserId() => User.FindFirst(ClaimTypes.Email)?.Value ?? "guest";
+        public async Task<IActionResult> Index()
+        {
+            var orders = await _orderService.GetUserOrdersAsync(_me.Email);
+            return View(new OrdersIndexViewModel
+            {
+                Orders = orders.OrderByDescending(o => o.CreatedAt).ToList()
+            });
+        }
 
-        [HttpGet]
-        public async Task<List<Order>> GetUserOrders() =>
-            await _orderService.GetUserOrdersAsync(GetUserId());
-
-        [HttpGet("{id:length(24)}")]
-        public async Task<ActionResult<Order>> GetOrder(string id)
+        public async Task<IActionResult> Details(string id)
         {
             var order = await _orderService.GetOrderAsync(id);
-            if (order == null || (order.UserId != GetUserId() && !User.IsInRole("Admin")))
-            {
+            if (order == null || (order.UserId != _me.Email && !_me.Role.Equals("Admin")))
                 return NotFound();
-            }
-            return order;
-        }
 
-        [HttpPost("checkout")]
-        public async Task<IActionResult> Checkout()
-        {
-            var cart = await _cartService.GetCartAsync(GetUserId());
-            if (cart == null || !cart.Items.Any()) return BadRequest(new { message = "Cart is empty" });
-
-            // Order type is derived server-side from membership and cart contents,
-            // never from client-supplied input.
-            var membership = await _membershipService.GetMembershipAsync(GetUserId());
-            var totalQuantity = cart.Items.Sum(i => i.Quantity);
-
-            Order newOrder;
-            if (membership.CurrentRole == "Premium") newOrder = new PremiumOrder();
-            else if (totalQuantity > 10) newOrder = new BulkOrder();
-            else newOrder = new RegularOrder();
-
-            newOrder.UserId = GetUserId();
-            newOrder.Items = cart.Items;
-
-            try
-            {
-                var placedOrder = await _orderService.PlaceOrderAsync(newOrder);
-                await _cartService.ClearCartAsync(GetUserId()); // clear cart after order
-                return Ok(placedOrder);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            return View(new OrderDetailsViewModel { Order = order });
         }
 
         [Authorize(Roles = "Admin")]
-        [HttpPatch("{id:length(24)}/status")]
-        public async Task<IActionResult> UpdateStatus(string id, [FromBody] string status)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateStatus(UpdateOrderStatusInput input)
         {
-            if (string.IsNullOrWhiteSpace(status) || !AllowedStatuses.Contains(status))
+            if (string.IsNullOrWhiteSpace(input.Status) || !AllowedStatuses.Contains(input.Status))
             {
-                return BadRequest(new { message = $"Status must be one of: {string.Join(", ", AllowedStatuses)}." });
+                TempData["Message"] = $"Status must be one of: {string.Join(", ", AllowedStatuses)}.";
+                TempData["MessageIsError"] = true;
+                return RedirectToAction("Index", "Admin");
             }
 
-            var order = await _orderService.GetOrderAsync(id);
+            var order = await _orderService.GetOrderAsync(input.Id);
             if (order == null) return NotFound();
 
-            await _orderService.UpdateOrderStatusAsync(id, status);
-            return NoContent();
+            await _orderService.UpdateOrderStatusAsync(input.Id, input.Status);
+            TempData["Message"] = $"Order {input.Id[..8]}... updated to {input.Status}.";
+            return RedirectToAction("Index", "Admin");
         }
     }
 }
