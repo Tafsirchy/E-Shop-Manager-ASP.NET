@@ -44,6 +44,13 @@ namespace EShopManager.API.Controllers
             });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Count()
+        {
+            var cart = await _cartService.GetCartAsync(_me.OwnerKey);
+            return Json(new { count = cart?.Items.Sum(i => i.Quantity) ?? 0 });
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Add(AddToCartInput input)
