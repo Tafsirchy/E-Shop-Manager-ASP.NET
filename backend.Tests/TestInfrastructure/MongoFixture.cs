@@ -49,12 +49,12 @@ namespace EShopManager.API.Tests
                 Orders = new OrderService(db, Products, Memberships);
             }
 
-            public async Task<Product> SeedProductAsync(string name, decimal price, int stock)
+            public async Task<Product> SeedProductAsync(string name, decimal price, int stock, string category = "tshirts")
             {
                 var product = new Product
                 {
                     Name = name,
-                    Category = "tshirts",
+                    Category = category,
                     Price = price,
                     Stock = stock,
                     Sku = "SKU-" + Guid.NewGuid().ToString("N")[..8]

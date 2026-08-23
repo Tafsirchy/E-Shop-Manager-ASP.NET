@@ -24,10 +24,32 @@ namespace EShopManager.API.Services
 
         public async Task<Order> PlaceOrderAsync(Order order)
         {
-            // Calculate base total before discount
-            order.TotalAmount = order.Items.Sum(i => i.Price * i.Quantity);
+            // Prefetch products once: used for category discounts and stock checks
+            var productsById = new Dictionary<string, Product?>();
+            foreach (var item in order.Items)
+            {
+                if (!productsById.ContainsKey(item.ProductId))
+                    productsById[item.ProductId] = await _productService.GetAsync(item.ProductId);
+            }
 
-            // Apply OOP polymorphism discount
+            // Subtotal before any discounts
+            order.Subtotal = Math.Round(order.Items.Sum(i => i.Price * i.Quantity), 2);
+
+            // Category-wise discount rules (polymorphic per-category policies)
+            order.CategoryDiscountApplied = Math.Round(order.Items.Sum(i =>
+            {
+                var lineTotal = i.Price * i.Quantity;
+                var product = productsById.TryGetValue(i.ProductId, out var p) ? p : null;
+                var policy = product == null
+                    ? NoCategoryDiscount.Instance
+                    : CategoryDiscountCatalog.Resolve(product.Category);
+                return policy.DiscountFor(lineTotal);
+            }), 2);
+
+            // Base total after category discounts
+            order.TotalAmount = order.Subtotal - order.CategoryDiscountApplied;
+
+            // Order-type-wise discount (Regular / Premium / Bulk override)
             order.ApplyDiscount();
 
             await _orderCollection.InsertOneAsync(order);
@@ -39,7 +61,7 @@ namespace EShopManager.API.Services
             {
                 foreach (var item in order.Items)
                 {
-                    var product = await _productService.GetAsync(item.ProductId);
+                    var product = productsById[item.ProductId];
                     if (product == null)
                     {
                         throw new InvalidOperationException(

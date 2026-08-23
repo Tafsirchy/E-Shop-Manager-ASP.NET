@@ -12,6 +12,8 @@ namespace EShopManager.API.Models
         public string? Id { get; set; }
         public string UserId { get; set; } = null!;
         public List<CartItem> Items { get; set; } = new();
+        public decimal Subtotal { get; set; }
+        public decimal CategoryDiscountApplied { get; set; }
         public decimal TotalAmount { get; set; }
         public decimal DiscountApplied { get; set; }
         public string Status { get; set; } = "Pending"; // Pending, Processing, Delivered, Cancelled
