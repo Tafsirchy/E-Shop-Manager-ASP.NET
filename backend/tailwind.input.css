@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+/* ============================================
+   E Shop — Backend Razor theme
+   Mirrors frontend/src/app/globals.css tokens.
+   Rebuild with:
+   npx @tailwindcss/cli@4 -i tailwind.input.css -o wwwroot/css/site.css --minify
+   ============================================ */
+
+@source "Views/**/*.cshtml";
+@source "wwwroot/js/**/*.js";
+
+@theme {
+  /* Base */
+  --color-background: #FAFAFA;
+  --color-foreground: #1E293B;
+  --color-card: #FFFFFF;
+  --color-border: #E4E4E7;
+
+  /* Primary — Indigo */
+  --color-primary-50:  #EEF2FF;
+  --color-primary-100: #E0E7FF;
+  --color-primary-200: #C7D2FE;
+  --color-primary-300: #A5B4FC;
+  --color-primary-400: #818CF8;
+  --color-primary-500: #6366F1;
+  --color-primary-600: #4F46E5;
+  --color-primary-700: #4338CA;
+  --color-primary-800: #3730A3;
+  --color-primary-900: #312E81;
+
+  /* Accent — Amber */
+  --color-accent-50:  #FFFBEB;
+  --color-accent-100: #FEF3C7;
+  --color-accent-200: #FDE68A;
+  --color-accent-300: #FCD34D;
+  --color-accent-400: #FBBF24;
+  --color-accent-500: #F59E0B;
+  --color-accent-600: #D97706;
+  --color-accent-700: #B45309;
+  --color-accent-800: #92400E;
+  --color-accent-900: #78350F;
+
+  /* Neutral — Zinc (matches frontend override) */
+  --color-neutral-50:  #FAFAFA;
+  --color-neutral-100: #F4F4F5;
+  --color-neutral-200: #E4E4E7;
+  --color-neutral-300: #D4D4D8;
+  --color-neutral-400: #A1A1AA;
+  --color-neutral-500: #71717A;
+  --color-neutral-600: #52525B;
+  --color-neutral-700: #3F3F46;
+  --color-neutral-800: #27272A;
+  --color-neutral-900: #1E293B;
+  --color-neutral-950: #09090B;
+
+  /* Semantic */
+  --color-success-500: #10B981;
+  --color-success-600: #059669;
+  --color-danger-500:  #EF4444;
+  --color-danger-600:  #DC2626;
+  --color-warning-500: #F59E0B;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-ticker {
+  animation: ticker 25s linear infinite;
+}
+
+/* ---------- Membership card float + shimmer ---------- */
+@keyframes float-card {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(-1deg); }
+}
+.float-card {
+  animation: float-card 6s ease-in-out infinite;
+}
+
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-100%) skewX(-15deg); opacity: 0; }
+  20% { opacity: 1; }
+  60% { opacity: 1; }
+  100% { transform: translateX(250%) skewX(-15deg); opacity: 0; }
+}
+.shimmer-sweep {
+  animation: shimmer-sweep 3.5s ease-in-out infinite;
+}
+
+/* ---------- Utilities ---------- */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.barcode-bg {
+  background-image: repeating-linear-gradient(
+    to right,
+    #09090B 0px, #09090B 2px,
+    transparent 2px, transparent 4px,
+    #09090B 4px, #09090B 5px,
+    transparent 5px, transparent 9px,
+    #09090B 9px, #09090B 12px,
+    transparent 12px, transparent 14px
+  );
+}
