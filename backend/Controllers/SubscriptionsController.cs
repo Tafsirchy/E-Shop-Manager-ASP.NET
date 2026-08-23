@@ -1,81 +1,120 @@
-using EShopManager.API.Models;
 using EShopManager.API.Services;
+using EShopManager.API.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace EShopManager.API.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class SubscriptionsController : ControllerBase
+    public class SubscriptionsController : Controller
     {
+        private static readonly List<string> AvailableFeatures = new()
+        {
+            "Premium Support",
+            "Advanced Analytics",
+            "Unlimited Products",
+            "Custom Domain",
+            "API Access"
+        };
+
         private readonly SubscriptionService _subscriptionService;
         private readonly MembershipService _membershipService;
+        private readonly CurrentUser _me;
 
-        public SubscriptionsController(SubscriptionService subscriptionService, MembershipService membershipService)
+        public SubscriptionsController(SubscriptionService subscriptionService,
+            MembershipService membershipService, CurrentUser me)
         {
             _subscriptionService = subscriptionService;
             _membershipService = membershipService;
+            _me = me;
         }
 
-        private string GetUserId() => User.FindFirst(ClaimTypes.Email)?.Value ?? "guest";
-
-        [HttpGet("packages")]
-        public async Task<List<SubscriptionPackage>> GetPackages() =>
-            await _subscriptionService.GetPackagesAsync();
-
-        [Authorize(Roles = "Admin")]
-        [HttpPost("packages")]
-        public async Task<IActionResult> CreatePackage(SubscriptionPackage package)
+        [HttpGet]
+        public async Task<IActionResult> Index()
         {
-            await _subscriptionService.CreatePackageAsync(package);
-            return Ok(package);
-        }
+            var packages = await _subscriptionService.GetPackagesAsync();
+            var mySubs = _me.IsAuthenticated
+                ? await _subscriptionService.GetUserSubscriptionsAsync(_me.Email)
+                : new List<Models.UserSubscription>();
 
-        [Authorize]
-        [HttpPost("custom/build")]
-        public async Task<IActionResult> BuildCustomPackage([FromBody] List<string> features)
-        {
-            var membership = await _membershipService.GetMembershipAsync(GetUserId());
-            var package = _subscriptionService.BuildCustomPackage(features ?? new List<string>(), 500m, membership.TotalSpent);
-            return Ok(package);
-        }
+            var lookup = mySubs.Select(s => s.PackageId).ToHashSet();
 
-        [Authorize]
-        [HttpPost("custom/purchase")]
-        public async Task<IActionResult> PurchaseCustomPackage([FromBody] List<string> features)
-        {
-            var membership = await _membershipService.GetMembershipAsync(GetUserId());
-            try
+            return View(new SubscriptionsIndexViewModel
             {
-                var sub = await _subscriptionService.SubscribeCustomAsync(GetUserId(), features ?? new List<string>(), membership.TotalSpent);
-                return Ok(sub);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+                Packages = packages.Select(p => new SubscriptionPackageRow
+                {
+                    Package = p,
+                    IsSubscribed = lookup.Contains(p.Id!)
+                }).ToList(),
+                AvailableFeatures = AvailableFeatures,
+                MySubscriptions = mySubs,
+                PackageLookup = packages.ToDictionary(p => p.Id!),
+                Quote = TempData["Quote"] as Models.SubscriptionPackage,
+                QuotedFeatures = (TempData["QuotedFeatures"] as List<string>) ?? new List<string>()
+            });
         }
 
+        [HttpPost]
         [Authorize]
-        [HttpPost("purchase/{packageId}")]
-        public async Task<IActionResult> Purchase(string packageId)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Subscribe(string packageId)
         {
             try
             {
-                var sub = await _subscriptionService.SubscribeAsync(GetUserId(), packageId);
-                return Ok(sub);
+                var sub = await _subscriptionService.SubscribeAsync(_me.Email, packageId);
+                TempData["StatusMessage"] = "Subscription activated successfully!";
+                TempData["StatusIsError"] = false;
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                TempData["StatusMessage"] = ex.Message;
+                TempData["StatusIsError"] = true;
             }
+            return RedirectToAction(nameof(Index));
         }
 
+        [HttpPost]
         [Authorize]
-        [HttpGet("my-subscriptions")]
-        public async Task<List<UserSubscription>> GetMySubscriptions() =>
-            await _subscriptionService.GetUserSubscriptionsAsync(GetUserId());
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BuildCustom([FromForm] List<string> features)
+        {
+            if (features == null || features.Count == 0)
+            {
+                TempData["StatusMessage"] = "Select at least one feature to build a package.";
+                TempData["StatusIsError"] = true;
+                return RedirectToAction(nameof(Index));
+            }
+
+            var membership = await _membershipService.GetMembershipAsync(_me.Email);
+            TempData["Quote"] = _subscriptionService.BuildCustomPackage(features, 500m, membership.TotalSpent);
+            TempData["QuotedFeatures"] = features;
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PurchaseCustom([FromForm] List<string> features)
+        {
+            if (features == null || features.Count == 0)
+            {
+                TempData["StatusMessage"] = "Select at least one feature to purchase a package.";
+                TempData["StatusIsError"] = true;
+                return RedirectToAction(nameof(Index));
+            }
+
+            try
+            {
+                var membership = await _membershipService.GetMembershipAsync(_me.Email);
+                await _subscriptionService.SubscribeCustomAsync(_me.Email, features, membership.TotalSpent);
+                TempData["StatusMessage"] = "Custom plan purchased successfully!";
+                TempData["StatusIsError"] = false;
+            }
+            catch (Exception ex)
+            {
+                TempData["StatusMessage"] = ex.Message;
+                TempData["StatusIsError"] = true;
+            }
+            return RedirectToAction(nameof(Index));
+        }
     }
 }
