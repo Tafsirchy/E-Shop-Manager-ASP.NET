@@ -45,7 +45,7 @@ namespace EShopManager.API.Tests
                 Db = db;
                 Products = new ProductService(db);
                 Carts = new CartService(db, Products);
-                Memberships = new MembershipService(db, new UserService(db));
+                Memberships = new MembershipService(db);
                 Orders = new OrderService(db, Products, Memberships);
             }
 

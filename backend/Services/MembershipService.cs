@@ -7,13 +7,11 @@ namespace EShopManager.API.Services
     {
         private readonly IMongoCollection<UserMembership> _membershipCollection;
         private readonly IMongoCollection<Coupon> _couponCollection;
-        private readonly UserService _userService;
 
-        public MembershipService(IMongoDatabase database, UserService userService)
+        public MembershipService(IMongoDatabase database)
         {
             _membershipCollection = database.GetCollection<UserMembership>("UserMemberships");
             _couponCollection = database.GetCollection<Coupon>("Coupons");
-            _userService = userService;
         }
 
         public async Task<UserMembership> GetMembershipAsync(string userId)
@@ -36,11 +34,13 @@ namespace EShopManager.API.Services
             mem.RewardPoints += (int)(amount / 100);
 
             // Role Upgradation logic: upgrade to premium if total spent exceeds 50,000
-            if (mem.TotalSpent >= 50000 && mem.CurrentRole == "Regular") 
+            if (mem.TotalSpent >= 50000 && mem.CurrentRole == "Regular")
             {
                 mem.CurrentRole = "Premium";
-                // Keep the User record in sync so freshly-issued JWTs carry the new role.
-                await _userService.UpdateRoleAsync(userId, "Premium");
+                // Membership tier deliberately stays OUT of UserRole (Customer|Admin):
+                // checkout reads the tier from this collection, not from auth claims.
+                // (Writing "Premium" into the enum-typed Role here silently reset it
+                // to Customer and would have demoted admins who placed large orders.)
             }
 
             await _membershipCollection.ReplaceOneAsync(x => x.Id == mem.Id, mem);
