@@ -14,7 +14,7 @@ namespace EShopManager.API.Services
         {
             _reviewsCollection = database.GetCollection<Review>("Reviews");
             _productsCollection = database.GetCollection<Product>("Products");
-            _usersCollection = database.GetCollection<User>("Users");
+            _usersCollection = database.GetCollection<User>("Customers");
 
             var productIndex = Builders<Review>.IndexKeys.Ascending(x => x.ProductId).Ascending(x => x.Status).Ascending(x => x.CreatedAt);
             _reviewsCollection.Indexes.CreateOne(new CreateIndexModel<Review>(productIndex));

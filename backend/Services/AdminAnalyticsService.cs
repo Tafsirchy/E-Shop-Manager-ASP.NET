@@ -12,7 +12,7 @@ namespace EShopManager.API.Services
         public AdminAnalyticsService(IMongoDatabase db)
         {
             _orders = db.GetCollection<Order>("Orders");
-            _users = db.GetCollection<User>("Users");
+            _users = db.GetCollection<User>("Customers");
             _products = db.GetCollection<Product>("Products");
         }
 

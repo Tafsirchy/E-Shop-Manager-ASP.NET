@@ -11,7 +11,7 @@ namespace EShopManager.API.Services
 
         public UserService(IMongoDatabase database)
         {
-            _usersCollection = database.GetCollection<User>("Users");
+            _usersCollection = database.GetCollection<User>("Customers");
             var indexKeys = Builders<User>.IndexKeys.Ascending(x => x.Email);
             var indexOptions = new CreateIndexOptions { Unique = true };
             _usersCollection.Indexes.CreateOne(new CreateIndexModel<User>(indexKeys, indexOptions));
@@ -45,7 +45,7 @@ namespace EShopManager.API.Services
                 Name = name,
                 Email = email,
                 PasswordHash = HashPassword(password),
-                Role = "Customer",
+                Role = UserRole.Customer,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -71,7 +71,9 @@ namespace EShopManager.API.Services
 
         public async Task UpdateRoleAsync(string userId, string role)
         {
-            var update = Builders<User>.Update.Set(x => x.Role, role);
+            var parsed = Enum.TryParse<UserRole>(role, ignoreCase: true, out var value)
+                ? value : UserRole.Customer;
+            var update = Builders<User>.Update.Set(x => x.Role, parsed);
             await _usersCollection.UpdateOneAsync(x => x.Id == userId, update);
         }
 

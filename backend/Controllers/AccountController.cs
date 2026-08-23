@@ -54,7 +54,7 @@ namespace EShopManager.API.Controllers
                 ? $"Signed in. {mergeResult.Items.Count} item(s) from your guest session were merged into your cart."
                 : null;
 
-            if (user.Role == "Admin") return RedirectToAction("Index", "Admin");
+            if (user.Role == UserRole.Admin) return RedirectToAction("Index", "Admin");
 
             if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
                 return Redirect(model.ReturnUrl);
@@ -108,7 +108,7 @@ namespace EShopManager.API.Controllers
                 new(ClaimTypes.NameIdentifier, user.Id),
                 new(ClaimTypes.Email, user.Email),
                 new(ClaimTypes.Name, user.Name),
-                new(ClaimTypes.Role, user.Role)
+                new(ClaimTypes.Role, user.Role.ToString())
             };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);

@@ -1,5 +1,6 @@
 using EShopManager.API.Models;
 using EShopManager.API.Services;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace EShopManager.API.Data
@@ -8,6 +9,7 @@ namespace EShopManager.API.Data
     {
         public static async Task SeedAsync(IMongoDatabase database)
         {
+            await MigrateUsersCollectionToCustomersAsync(database);
             var products = database.GetCollection<Product>("Products");
             await SeedAdminUserAsync(database);
 
@@ -68,9 +70,28 @@ namespace EShopManager.API.Data
             }
         }
 
+        private static async Task MigrateUsersCollectionToCustomersAsync(IMongoDatabase database)
+        {
+            var names = await database.ListCollectionNamesAsync();
+            var existing = await names.ToListAsync();
+
+            if (!existing.Contains("Users") || existing.Contains("Customers"))
+                return;
+
+            var db = database.DatabaseNamespace.DatabaseName;
+            var adminDb = database.Client.GetDatabase("admin");
+            var command = new BsonDocument
+            {
+                { "renameCollection", $"{db}.Users" },
+                { "to", $"{db}.Customers" }
+            };
+            await adminDb.RunCommandAsync<BsonDocument>(command);
+            Console.WriteLine("Migrated collection 'Users' -> 'Customers'");
+        }
+
         private static async Task SeedAdminUserAsync(IMongoDatabase database)
         {
-            var users = database.GetCollection<User>("Users");
+            var users = database.GetCollection<User>("Customers");
 
             var existingAdmin = await users.Find(x => x.Email.ToLower() == "admin@eshop.com").FirstOrDefaultAsync();
             if (existingAdmin != null) return;
@@ -80,7 +101,7 @@ namespace EShopManager.API.Data
                 Name = "Administrator",
                 Email = "admin@eshop.com",
                 PasswordHash = UserService.HashPassword("admin123"),
-                Role = "Admin",
+                Role = UserRole.Admin,
                 CreatedAt = DateTime.UtcNow
             };
 

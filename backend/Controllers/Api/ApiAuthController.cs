@@ -30,7 +30,7 @@ namespace EShopManager.API.Controllers.Api
                 return Unauthorized(new { error = "Invalid email or password." });
 
             var (token, expiresAt) = _tokens.CreateToken(user);
-            return Ok(new LoginResponse(token, "Bearer", expiresAt, user.Name, user.Email, user.Role));
+            return Ok(new LoginResponse(token, "Bearer", expiresAt, user.Name, user.Email, user.Role.ToString()));
         }
 
         [HttpGet("me")]
