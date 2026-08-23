@@ -177,6 +177,48 @@
         });
     }
 
+    /* ---------- Hover/touch prefetch of product pages ---------- */
+
+    function initPrefetch() {
+        var conn = navigator.connection;
+        if (conn && (conn.saveData || /(^|-)2g/.test(conn.effectiveType || ''))) return;
+
+        var prefetched = new Set();
+        var timer = null;
+        var lastEl = null;
+
+        function prefetch(link) {
+            if (!link || link.dataset.prefetched === '1') return;
+            if (link.hostname !== location.hostname) return;
+            if (!link.pathname.startsWith('/Products/Details/')) return;
+            link.dataset.prefetched = '1';
+            prefetched.add(link.href);
+            fetch(link.href, { priority: 'low', credentials: 'same-origin' })
+                .catch(function () { /* navigation will just load normally */ });
+        }
+
+        document.addEventListener('pointerover', function (e) {
+            var link = e.target.closest ? e.target.closest('a[href]') : null;
+            if (!link || link === lastEl) return;
+            lastEl = link;
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(function () { prefetch(link); }, 90);
+        });
+
+        document.addEventListener('pointerout', function (e) {
+            if (timer && e.target.closest && e.target.closest('a[href]') === lastEl) {
+                clearTimeout(timer);
+                timer = null;
+                lastEl = null;
+            }
+        }, true);
+
+        document.addEventListener('touchstart', function (e) {
+            var link = e.target.closest ? e.target.closest('a[href]') : null;
+            if (link) prefetch(link);
+        }, { passive: true, capture: true });
+    }
+
     /* ---------- Boot ---------- */
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -191,6 +233,7 @@
 
         refreshCartBadge();
         initSearchSuggestions();
+        initPrefetch();
     });
 
     window.refreshCartBadge = refreshCartBadge;

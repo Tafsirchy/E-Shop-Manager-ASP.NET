@@ -117,6 +117,37 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Short-lived private caching of catalog pages for anonymous visitors so that
+// hover/touch prefetches (site.js) are reused by the subsequent navigation.
+// Skipped when a TempData cookie is present (a status banner would be rendered)
+// and for authenticated users (wishlist state and admin UI personalize pages).
+// Uses OnStarting because antiforgery stamping forms marks responses no-store
+// during rendering; anonymous catalog GETs are safe to override for a few seconds.
+var tempDataCookieName = ".AspNetCore.Mvc.CookieTempDataProvider";
+app.Use(async (context, next) =>
+{
+    var req = context.Request;
+    var cacheable =
+        HttpMethods.IsGet(req.Method) &&
+        !(context.User.Identity?.IsAuthenticated ?? false) &&
+        !req.Cookies.ContainsKey(tempDataCookieName) &&
+        (req.Path.StartsWithSegments("/Products") || req.Path.StartsWithSegments("/Home"));
+
+    if (cacheable)
+    {
+        context.Response.OnStarting(() =>
+        {
+            if (context.Response.StatusCode == StatusCodes.Status200OK)
+            {
+                context.Response.Headers.CacheControl = "private, max-age=20";
+            }
+            return Task.CompletedTask;
+        });
+    }
+
+    await next();
+});
+
 app.UseOutputCache();
 
 app.MapDefaultControllerRoute();
