@@ -11,6 +11,7 @@ namespace EShopManager.API.Data
         {
             await MigrateUsersCollectionToCustomersAsync(database);
             await BackfillSecurityStampsAsync(database);
+            await BackfillEmailCasingAsync(database);
             var products = database.GetCollection<Product>("Products");
             await SeedAdminUserAsync(database);
 
@@ -99,6 +100,46 @@ namespace EShopManager.API.Data
                 Builders<User>.Update.Set(x => x.SecurityStamp, 1));
             if (result.ModifiedCount > 0)
                 Console.WriteLine($"Backfilled SecurityStamp for {result.ModifiedCount} user(s).");
+        }
+
+        /// <summary>
+        /// Rewrites emails to a canonical lowercase form everywhere they act as an
+        /// identity key, so exact-match lookups can rely on the unique index.
+        /// Values without an "@" (e.g. legacy GUID reviewer keys) are left untouched.
+        /// </summary>
+        private static async Task BackfillEmailCasingAsync(IMongoDatabase database)
+        {
+            var targets = new (string Collection, string Field)[]
+            {
+                ("Customers", "Email"),
+                ("Orders", "UserId"),
+                ("UserMemberships", "UserId"),
+                ("UserSubscriptions", "UserId"),
+                ("Wishlists", "UserId"),
+                ("Carts", "UserId"),
+                ("Reviews", "UserId")
+            };
+
+            foreach (var (collectionName, field) in targets)
+            {
+                var collection = database.GetCollection<BsonDocument>(collectionName);
+                var filter = Builders<BsonDocument>.Filter.And(
+                    Builders<BsonDocument>.Filter.Exists(field),
+                    Builders<BsonDocument>.Filter.Type(field, BsonType.String),
+                    Builders<BsonDocument>.Filter.Regex(field, new BsonRegularExpression("[A-Z]")));
+                var docs = await collection.Find(filter).ToListAsync();
+                var fixedCount = 0;
+                foreach (var doc in docs)
+                {
+                    var value = doc[field].AsString;
+                    if (!value.Contains('@') || value == value.ToLowerInvariant()) continue;
+                    var update = Builders<BsonDocument>.Update.Set(field, value.ToLowerInvariant());
+                    await collection.UpdateOneAsync(Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]), update);
+                    fixedCount++;
+                }
+                if (fixedCount > 0)
+                    Console.WriteLine($"Normalized email casing on {collectionName}.{field} for {fixedCount} document(s).");
+            }
         }
 
         private static async Task SeedAdminUserAsync(IMongoDatabase database)

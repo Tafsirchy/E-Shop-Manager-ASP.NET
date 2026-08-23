@@ -1,6 +1,7 @@
 using EShopManager.API.Models;
 using EShopManager.API.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EShopManager.API.Controllers.Api
@@ -23,11 +24,11 @@ namespace EShopManager.API.Controllers.Api
 
         [HttpPost("login")]
         [AllowAnonymous]
+        [EnableRateLimiting("auth-ip")]
         public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
         {
-            var user = await _users.GetByEmailAsync(request.Email);
-            if (user == null || !UserService.VerifyPassword(request.Password, user.PasswordHash))
-                return Unauthorized(new { error = "Invalid email or password." });
+            var (user, error) = await _users.ValidateCredentialsAsync(request.Email, request.Password);
+            if (user == null) return Unauthorized(new { error });
 
             var (token, expiresAt) = _tokens.CreateToken(user);
             return Ok(new LoginResponse(token, "Bearer", expiresAt, user.Name, user.Email, user.Role.ToString()));

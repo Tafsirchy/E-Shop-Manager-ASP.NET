@@ -20,8 +20,15 @@ namespace EShopManager.API.Services
             _usersCollection.Indexes.CreateOne(new CreateIndexModel<User>(indexKeys, indexOptions));
         }
 
-        public async Task<User?> GetByEmailAsync(string email) =>
-            await _usersCollection.Find(x => x.Email.ToLower() == email.Trim().ToLower()).FirstOrDefaultAsync();
+        /// <summary>Emails are stored canonically lowercased; lookups are exact matches so the unique index is used.</summary>
+        public static string NormalizeEmail(string? email) => (email ?? "").Trim().ToLowerInvariant();
+
+        public async Task<User?> GetByEmailAsync(string email)
+        {
+            var normalized = NormalizeEmail(email);
+            if (normalized.Length == 0) return null;
+            return await _usersCollection.Find(x => x.Email == normalized).FirstOrDefaultAsync();
+        }
 
         public async Task<User?> GetByIdAsync(string id) =>
             await _usersCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
@@ -46,7 +53,7 @@ namespace EShopManager.API.Services
             var user = new User
             {
                 Name = name,
-                Email = email,
+                Email = NormalizeEmail(email),
                 PasswordHash = HashPassword(password),
                 Role = UserRole.Customer,
                 CreatedAt = DateTime.UtcNow
@@ -64,10 +71,18 @@ namespace EShopManager.API.Services
             return (user, null);
         }
 
+        // Precomputed hash of an unknown password; verified against when the email is
+        // unknown so that response timing cannot reveal whether an account exists.
+        private static readonly string DummyPasswordHash = HashPassword(Guid.NewGuid().ToString());
+
         public async Task<(User? User, string? Error)> ValidateCredentialsAsync(string email, string password)
         {
             var user = await GetByEmailAsync(email);
-            if (user == null) return (null, "Invalid email or password.");
+            if (user == null)
+            {
+                VerifyPassword(password ?? "", DummyPasswordHash);
+                return (null, "Invalid email or password.");
+            }
             if (!VerifyPassword(password ?? "", user.PasswordHash)) return (null, "Invalid email or password.");
             return (user, null);
         }
