@@ -105,6 +105,7 @@ namespace EShopManager.API.Controllers
             }
 
             coupon.Code = coupon.Code.Trim().ToUpper();
+            coupon.RequiredPoints = Math.Max(0, coupon.RequiredPoints);
             await _membershipService.CreateCouponAsync(coupon);
             TempData["StatusMessage"] = $"Coupon {coupon.Code} created.";
             return RedirectToAction(nameof(Coupons));

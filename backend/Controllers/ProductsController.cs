@@ -116,6 +116,12 @@ namespace EShopManager.API.Controllers
                 return View(product);
             }
 
+            // Never trust these from the wire: they are derived server-side.
+            product.Id = null;
+            product.AverageRating = 0;
+            product.ReviewCount = 0;
+            product.CreatedAt = DateTime.UtcNow;
+
             product.GalleryImages = ParseGalleryInput(galleryInput);
             await _productService.CreateAsync(product);
             TempData["StatusMessage"] = $"Product \"{product.Name}\" created.";
