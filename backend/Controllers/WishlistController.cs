@@ -1,79 +1,89 @@
 using EShopManager.API.Models;
 using EShopManager.API.Services;
-using Microsoft.AspNetCore.Authorization;
+using EShopManager.API.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace EShopManager.API.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class WishlistController : ControllerBase
+    public class WishlistController : Controller
     {
         private readonly WishlistService _wishlistService;
+        private readonly ProductService _productService;
+        private readonly CurrentUser _me;
 
-        public WishlistController(WishlistService wishlistService)
+        public WishlistController(WishlistService wishlistService, ProductService productService, CurrentUser me)
         {
             _wishlistService = wishlistService;
+            _productService = productService;
+            _me = me;
         }
 
-        // ---- Authenticated user endpoints (identity from JWT) ----
+        private bool IsGuest => !_me.IsAuthenticated;
 
-        [HttpGet]
-        [Authorize]
-        public async Task<IActionResult> GetMine()
+        public async Task<IActionResult> Index()
         {
-            var wl = await _wishlistService.GetByUserAsync(GetUserId());
-            return Ok(wl ?? new Wishlist { UserId = GetUserId() });
+            var owner = _me.OwnerKey;
+            var wl = IsGuest ? await _wishlistService.GetByGuestAsync(owner) : await _wishlistService.GetByUserAsync(owner);
+
+            var rows = new List<WishlistRow>();
+            foreach (var item in wl?.Items ?? new List<WishlistItem>())
+            {
+                var product = await _productService.GetAsync(item.ProductId);
+                rows.Add(new WishlistRow { Item = item, Product = product });
+            }
+
+            return View(new WishlistIndexViewModel { Rows = rows });
         }
 
-        [HttpPost("items")]
-        [Authorize]
-        public async Task<IActionResult> AddItem(WishlistItem item)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Toggle(WishlistToggleInput input)
         {
-            var productError = await _wishlistService.ValidateProductAsync(item.ProductId);
-            if (productError != null) return BadRequest(new { message = productError });
+            var error = await _wishlistService.ValidateProductAsync(input.ProductId);
+            if (error != null)
+            {
+                TempData["StatusMessage"] = error;
+                TempData["StatusIsError"] = true;
+                return RedirectToLocal(input.ReturnUrl);
+            }
 
-            await _wishlistService.AddItemAsync(GetUserId(), false, item);
-            var wl = await _wishlistService.GetByUserAsync(GetUserId());
-            return Ok(wl);
+            var owner = _me.OwnerKey;
+            var wl = IsGuest ? await _wishlistService.GetByGuestAsync(owner) : await _wishlistService.GetByUserAsync(owner);
+            var existingItem = wl?.Items.FirstOrDefault(x => x.ProductId == input.ProductId);
+
+            if (existingItem != null)
+            {
+                await _wishlistService.RemoveItemAsync(owner, IsGuest, existingItem.ItemId);
+                TempData["StatusMessage"] = "Removed from wishlist.";
+            }
+            else
+            {
+                await _wishlistService.AddItemAsync(owner, IsGuest, new WishlistItem
+                {
+                    ProductId = input.ProductId,
+                    VariantId = null
+                });
+                TempData["StatusMessage"] = "Added to wishlist.";
+            }
+            TempData["StatusIsError"] = false;
+
+            return RedirectToLocal(input.ReturnUrl);
         }
 
-        [HttpDelete("items/{itemId}")]
-        [Authorize]
-        public async Task<IActionResult> RemoveItem(string itemId)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Remove(string itemId)
         {
-            await _wishlistService.RemoveItemAsync(GetUserId(), false, itemId);
-            return NoContent();
+            var owner = _me.OwnerKey;
+            await _wishlistService.RemoveItemAsync(owner, IsGuest, itemId);
+            return RedirectToAction(nameof(Index));
         }
 
-        // ---- Guest endpoints (guestSessionId is self-identifying) ----
-
-        [HttpGet("guest/{guestId}")]
-        public async Task<IActionResult> GetGuest(string guestId)
+        private IActionResult RedirectToLocal(string? returnUrl)
         {
-            var wl = await _wishlistService.GetByGuestAsync(guestId);
-            return Ok(wl ?? new Wishlist { GuestSessionId = guestId });
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
+            return RedirectToAction(nameof(Index));
         }
-
-        [HttpPost("guest/{guestId}/items")]
-        public async Task<IActionResult> AddGuestItem(string guestId, WishlistItem item)
-        {
-            var productError = await _wishlistService.ValidateProductAsync(item.ProductId);
-            if (productError != null) return BadRequest(new { message = productError });
-
-            await _wishlistService.AddItemAsync(guestId, true, item);
-            var wl = await _wishlistService.GetByGuestAsync(guestId);
-            return Ok(wl);
-        }
-
-        [HttpDelete("guest/{guestId}/items/{itemId}")]
-        public async Task<IActionResult> RemoveGuestItem(string guestId, string itemId)
-        {
-            await _wishlistService.RemoveItemAsync(guestId, true, itemId);
-            return NoContent();
-        }
-
-        private string GetUserId() => User.FindFirst(ClaimTypes.Email)?.Value ?? "";
     }
 }
