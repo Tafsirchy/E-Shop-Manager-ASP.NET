@@ -114,3 +114,18 @@ body {
     transparent 12px, transparent 14px
   );
 }
+
+/* ---------- Image loading shimmer (removed on load via site.js) ---------- */
+.img-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.img-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.55) 50%, transparent 60%);
+  transform: translateX(-150%);
+  animation: shimmer-sweep 1.8s ease-in-out infinite;
+  pointer-events: none;
+}

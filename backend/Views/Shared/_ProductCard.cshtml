@@ -4,7 +4,7 @@
     var inWishlist = ViewBag.InWishlist as bool? ?? false;
 }
 <div class="group relative bg-card rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-border flex flex-col overflow-hidden">
-    <div class="h-48 bg-gradient-to-br from-neutral-100 to-neutral-200 rounded-xl mb-4 flex items-center justify-center overflow-hidden relative">
+    <div class="img-shimmer h-48 bg-gradient-to-br from-neutral-100 to-neutral-200 rounded-xl mb-4 flex items-center justify-center overflow-hidden relative">
         @if (!string.IsNullOrEmpty(Model.ImageUrl))
         {
             <a asp-controller="Products" asp-action="Details" asp-route-id="@Model.Id" class="absolute inset-0">

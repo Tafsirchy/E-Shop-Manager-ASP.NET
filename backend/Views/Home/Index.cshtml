@@ -289,7 +289,7 @@
                                 <img src="@(ImageUrls.Sized(string.IsNullOrEmpty(product.ImageUrl) ? "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=600" : product.ImageUrl, 500))"
                                      alt="@product.Name" width="500" height="600" loading="lazy" decoding="async"
                                      class="absolute inset-0 w-full h-full object-cover object-center grayscale group-hover:grayscale-0 transition-all duration-700 scale-100 group-hover:scale-105 mix-blend-multiply" />
-                                <div class="absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors duration-500"></div>
+                                <div class="img-shimmer absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors duration-500"></div>
                             </div>
 
                             <div class="flex flex-col">
