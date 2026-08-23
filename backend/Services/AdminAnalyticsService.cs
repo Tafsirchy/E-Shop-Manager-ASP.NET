@@ -29,7 +29,6 @@ namespace EShopManager.API.Services
             var recentOrders = allOrders
                 .OrderByDescending(x => x.CreatedAt)
                 .Take(5)
-                .Select(x => new { x.Id, x.UserId, x.TotalAmount, x.Status, x.CreatedAt })
                 .ToList();
 
             return new
