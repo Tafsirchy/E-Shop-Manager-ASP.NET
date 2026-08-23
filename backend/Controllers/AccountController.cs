@@ -1,0 +1,119 @@
+using System.Security.Claims;
+using EShopManager.API.Models;
+using EShopManager.API.Services;
+using EShopManager.API.ViewModels;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace EShopManager.API.Controllers
+{
+    public class AccountController : Controller
+    {
+        private readonly UserService _userService;
+        private readonly CartService _cartService;
+        private readonly WishlistService _wishlistService;
+        private readonly CurrentUser _me;
+
+        public AccountController(UserService userService, CartService cartService,
+            WishlistService wishlistService, CurrentUser me)
+        {
+            _userService = userService;
+            _cartService = cartService;
+            _wishlistService = wishlistService;
+            _me = me;
+        }
+
+        [HttpGet]
+        public IActionResult Login(string? returnUrl = null)
+        {
+            if (_me.IsAuthenticated) return RedirectToAction("Index", "Home");
+            return View(new LoginViewModel { ReturnUrl = returnUrl });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var (user, error) = await _userService.ValidateCredentialsAsync(model.Email, model.Password);
+            if (user == null)
+            {
+                ModelState.AddModelError(string.Empty, error ?? "Unable to sign in.");
+                return View(model);
+            }
+
+            var mergeResult = await _cartService.MergeGuestIntoUserAsync(_me.EnsureGuestId(), user.Email);
+            await _wishlistService.MergeGuestIntoUserAsync(_me.EnsureGuestId(), user.Email);
+            _me.ClearGuestCookie();
+
+            await SignInAsync(user);
+            TempData["StatusMessage"] = mergeResult.Items.Count > 0
+                ? $"Signed in. {mergeResult.Items.Count} item(s) from your guest session were merged into your cart."
+                : null;
+
+            if (user.Role == "Admin") return RedirectToAction("Index", "Admin");
+
+            if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
+                return Redirect(model.ReturnUrl);
+
+            return RedirectToAction("Index", "Home");
+        }
+
+        [HttpGet]
+        public IActionResult Register()
+        {
+            if (_me.IsAuthenticated) return RedirectToAction("Index", "Home");
+            return View(new RegisterViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register(RegisterViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var guestId = _me.EnsureGuestId();
+            var (user, error) = await _userService.RegisterAsync(model.Name, model.Email, model.Password);
+            if (user == null)
+            {
+                ModelState.AddModelError(string.Empty, error ?? "Unable to create account.");
+                return View(model);
+            }
+
+            await _cartService.MergeGuestIntoUserAsync(guestId, user.Email);
+            await _wishlistService.MergeGuestIntoUserAsync(guestId, user.Email);
+            _me.ClearGuestCookie();
+
+            await SignInAsync(user);
+            TempData["StatusMessage"] = "Account created successfully. Welcome to E-Shop!";
+            return RedirectToAction("Index", "Home");
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction("Index", "Home");
+        }
+
+        private async Task SignInAsync(User user)
+        {
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, user.Id),
+                new(ClaimTypes.Email, user.Email),
+                new(ClaimTypes.Name, user.Name),
+                new(ClaimTypes.Role, user.Role)
+            };
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+        }
+    }
+}
