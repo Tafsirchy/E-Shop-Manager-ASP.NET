@@ -1,0 +1,17 @@
+{
+  "name": "eshop-backend",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i tailwind.input.css -o wwwroot/css/site.css --minify",
+    "watch:css": "tailwindcss -i tailwind.input.css -o wwwroot/css/site.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3"
+  },
+  "dependencies": {
+    "jquery": "^4.0.0",
+    "jquery-validation": "^1.22.1",
+    "jquery-validation-unobtrusive": "^4.0.0"
+  }
+}
