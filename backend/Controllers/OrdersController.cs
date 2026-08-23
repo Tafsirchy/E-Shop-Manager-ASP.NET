@@ -1,3 +1,4 @@
+using EShopManager.API.Models;
 using EShopManager.API.Services;
 using EShopManager.API.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -12,13 +13,22 @@ namespace EShopManager.API.Controllers
             { "Pending", "Processing", "Shipped", "Delivered", "Cancelled" };
 
         private readonly OrderService _orderService;
+        private readonly ProductService _productService;
+        private readonly UserService _userService;
         private readonly CurrentUser _me;
 
-        public OrdersController(OrderService orderService, CurrentUser me)
+        public OrdersController(OrderService orderService, ProductService productService,
+            UserService userService, CurrentUser me)
         {
             _orderService = orderService;
+            _productService = productService;
+            _userService = userService;
             _me = me;
         }
+
+        private bool CanAccess(Order? order) =>
+            order != null &&
+            (order.UserId == _me.Email || string.Equals(_me.Role, UserRole.Admin.ToString()));
 
         public async Task<IActionResult> Index()
         {
@@ -32,10 +42,41 @@ namespace EShopManager.API.Controllers
         public async Task<IActionResult> Details(string id)
         {
             var order = await _orderService.GetOrderAsync(id);
-            if (order == null || (order.UserId != _me.Email && !_me.Role.Equals("Admin")))
+            if (!CanAccess(order))
                 return NotFound();
 
-            return View(new OrderDetailsViewModel { Order = order });
+            return View(new OrderDetailsViewModel { Order = order! });
+        }
+
+        public async Task<IActionResult> Invoice(string id)
+        {
+            var order = await _orderService.GetOrderAsync(id);
+            if (!CanAccess(order))
+                return NotFound();
+
+            var customer = await _userService.GetByEmailAsync(order!.UserId);
+
+            var lines = new List<InvoiceLine>();
+            foreach (var item in order.Items)
+            {
+                var product = await _productService.GetAsync(item.ProductId);
+                lines.Add(new InvoiceLine
+                {
+                    Name = product?.Name ?? item.ProductName ?? $"Product {item.ProductId}",
+                    Category = product?.Category ?? "",
+                    Quantity = item.Quantity,
+                    UnitPrice = item.Price,
+                    LineTotal = item.Price * item.Quantity
+                });
+            }
+
+            return View(new InvoiceViewModel
+            {
+                Order = order,
+                CustomerName = customer?.Name ?? order.UserId,
+                CustomerEmail = customer?.Email ?? order.UserId,
+                Lines = lines
+            });
         }
 
         [Authorize(Roles = "Admin")]

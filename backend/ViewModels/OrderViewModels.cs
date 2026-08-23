@@ -22,4 +22,21 @@ namespace EShopManager.API.ViewModels
     {
         public Order Order { get; set; } = null!;
     }
+
+    public class InvoiceLine
+    {
+        public string Name { get; set; } = null!;
+        public string Category { get; set; } = "";
+        public int Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
+        public decimal LineTotal { get; set; }
+    }
+
+    public class InvoiceViewModel
+    {
+        public Order Order { get; set; } = null!;
+        public string CustomerName { get; set; } = "";
+        public string CustomerEmail { get; set; } = "";
+        public List<InvoiceLine> Lines { get; set; } = new();
+    }
 }

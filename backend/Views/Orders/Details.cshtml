@@ -38,12 +38,23 @@
             </div>
 
             <div class="border-t border-border pt-4 space-y-2 text-right">
+                @if (order.CategoryDiscountApplied > 0)
+                {
+                    <p class="text-sm text-success-600">Category discounts: -&#2547;@order.CategoryDiscountApplied.ToString("0.##")</p>
+                }
                 @if (order.DiscountApplied > 0)
                 {
-                    <p class="text-sm text-success-600">Discount applied: -&#2547;@order.DiscountApplied.ToString("0.##")</p>
+                    <p class="text-sm text-success-600">@Model.Order switch { PremiumOrder => "Premium", BulkOrder => "Bulk", _ => "Order-type" } discount: -&#2547;@order.DiscountApplied.ToString("0.##")</p>
                 }
                 <p class="text-lg font-bold text-foreground">Total: &#2547;@order.TotalAmount.ToString("0.##")</p>
             </div>
+        </div>
+
+        <div class="flex justify-end print:hidden">
+            <a asp-controller="Orders" asp-action="Invoice" asp-route-id="@order.Id"
+               class="inline-block rounded-full bg-primary-600 px-6 py-2 font-semibold text-white hover:bg-primary-700 transition">
+                View Invoice
+            </a>
         </div>
     </div>
 </main>
