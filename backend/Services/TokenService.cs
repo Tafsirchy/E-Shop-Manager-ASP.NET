@@ -26,6 +26,7 @@ namespace EShopManager.API.Services
                 new(ClaimTypes.Email, user.Email),
                 new(ClaimTypes.Name, user.Name),
                 new(ClaimTypes.Role, user.Role.ToString()),
+                new(SecurityStampValidator.ClaimName, user.SecurityStamp.ToString()),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 

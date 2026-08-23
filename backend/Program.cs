@@ -1,6 +1,7 @@
 using EShopManager.API.Data;
 using EShopManager.API.Models;
 using EShopManager.API.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -93,6 +94,8 @@ if (mongoDbSettings != null)
 }
 
 builder.Services.AddScoped<CurrentUser>();
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<SecurityStampValidator>();
 
 var app = builder.Build();
 
@@ -115,6 +118,24 @@ app.UseStaticFiles(new StaticFileOptions
 app.UseRouting();
 
 app.UseAuthentication();
+
+// Revoke sessions whose security stamp no longer matches the database
+// (role changes, bans). Old cookies are signed out; stale JWTs become anonymous.
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true)
+    {
+        var validator = context.RequestServices.GetRequiredService<SecurityStampValidator>();
+        if (!await validator.IsCurrentAsync(context.User))
+        {
+            await context.SignOutAsync(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme);
+            context.User = new System.Security.Claims.ClaimsPrincipal(
+                new System.Security.Claims.ClaimsIdentity());
+        }
+    }
+    await next();
+});
+
 app.UseAuthorization();
 
 // Short-lived private caching of catalog pages for anonymous visitors so that

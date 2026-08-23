@@ -10,6 +10,10 @@ namespace EShopManager.API.Models
         [MongoDB.Bson.Serialization.Attributes.BsonRepresentation(MongoDB.Bson.BsonType.String)]
         public UserRole Role { get; set; } = UserRole.Customer;
 
+        /// <summary>Bumped whenever authorization-relevant state (e.g. Role) changes;
+        /// tokens carrying an older value are rejected, forcing re-authentication.</summary>
+        public int SecurityStamp { get; set; } = 1;
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

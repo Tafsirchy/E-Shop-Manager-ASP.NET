@@ -1,5 +1,6 @@
 using EShopManager.API.Models;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using Microsoft.Extensions.Caching.Memory;
 using MongoDB.Driver;
 using System.Security.Cryptography;
 
@@ -8,10 +9,12 @@ namespace EShopManager.API.Services
     public class UserService
     {
         private readonly IMongoCollection<User> _usersCollection;
+        private readonly IMemoryCache _cache;
 
-        public UserService(IMongoDatabase database)
+        public UserService(IMongoDatabase database, IMemoryCache? cache = null)
         {
             _usersCollection = database.GetCollection<User>("Customers");
+            _cache = cache ?? new MemoryCache(Microsoft.Extensions.Options.Options.Create(new MemoryCacheOptions()));
             var indexKeys = Builders<User>.IndexKeys.Ascending(x => x.Email);
             var indexOptions = new CreateIndexOptions { Unique = true };
             _usersCollection.Indexes.CreateOne(new CreateIndexModel<User>(indexKeys, indexOptions));
@@ -73,9 +76,18 @@ namespace EShopManager.API.Services
         {
             var parsed = Enum.TryParse<UserRole>(role, ignoreCase: true, out var value)
                 ? value : UserRole.Customer;
-            var update = Builders<User>.Update.Set(x => x.Role, parsed);
+            var update = Builders<User>.Update
+                .Set(x => x.Role, parsed)
+                .Inc(x => x.SecurityStamp, 1);
             await _usersCollection.UpdateOneAsync(x => x.Id == userId, update);
+            _cache.Remove(SecurityStampValidator.CachePrefix + userId);
         }
+
+        /// <summary>Returns the user's current security stamp, or null if the user does not exist.</summary>
+        public async Task<int?> GetSecurityStampAsync(string userId) =>
+            await _usersCollection.Find(x => x.Id == userId)
+                .Project(u => (int?)u.SecurityStamp)
+                .FirstOrDefaultAsync();
 
         public static string HashPassword(string password)
         {

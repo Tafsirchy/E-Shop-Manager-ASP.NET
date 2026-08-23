@@ -10,6 +10,7 @@ namespace EShopManager.API.Data
         public static async Task SeedAsync(IMongoDatabase database)
         {
             await MigrateUsersCollectionToCustomersAsync(database);
+            await BackfillSecurityStampsAsync(database);
             var products = database.GetCollection<Product>("Products");
             await SeedAdminUserAsync(database);
 
@@ -87,6 +88,17 @@ namespace EShopManager.API.Data
             };
             await adminDb.RunCommandAsync<BsonDocument>(command);
             Console.WriteLine("Migrated collection 'Users' -> 'Customers'");
+        }
+
+        private static async Task BackfillSecurityStampsAsync(IMongoDatabase database)
+        {
+            var users = database.GetCollection<User>("Customers");
+            var missingStamp = Builders<User>.Filter.Not(Builders<User>.Filter.Exists(x => x.SecurityStamp));
+            var result = await users.UpdateManyAsync(
+                missingStamp,
+                Builders<User>.Update.Set(x => x.SecurityStamp, 1));
+            if (result.ModifiedCount > 0)
+                Console.WriteLine($"Backfilled SecurityStamp for {result.ModifiedCount} user(s).");
         }
 
         private static async Task SeedAdminUserAsync(IMongoDatabase database)
