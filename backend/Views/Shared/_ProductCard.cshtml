@@ -8,7 +8,7 @@
         @if (!string.IsNullOrEmpty(Model.ImageUrl))
         {
             <a asp-controller="Products" asp-action="Details" asp-route-id="@Model.Id" class="absolute inset-0">
-                <img src="@Model.ImageUrl" alt="@Model.Name" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                <img src="@ImageUrls.Sized(Model.ImageUrl, 400)" alt="@Model.Name" width="400" height="300" loading="lazy" decoding="async" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
             </a>
         }
         else

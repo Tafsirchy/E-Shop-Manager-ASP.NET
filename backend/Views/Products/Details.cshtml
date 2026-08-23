@@ -34,7 +34,7 @@
                 <div class="overflow-hidden rounded-2xl bg-neutral-100 flex items-center justify-center">
                     @if (gallery.Any())
                     {
-                        <img src="@gallery[0]" alt="@product.Name" class="h-[480px] w-full object-cover" />
+                        <img src="@ImageUrls.Sized(gallery[0], 1000)" alt="@product.Name" width="1000" height="750" fetchpriority="high" decoding="async" class="h-[480px] w-full object-cover" />
                     }
                     else
                     {
@@ -47,7 +47,7 @@
                         @foreach (var image in gallery)
                         {
                             <div class="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-neutral-200">
-                                <img src="@image" alt="@product.Name" class="h-full w-full object-cover" />
+                                <img src="@ImageUrls.Sized(image, 200)" alt="@product.Name" width="160" height="160" loading="lazy" decoding="async" class="h-full w-full object-cover" />
                             </div>
                         }
                     </div>

@@ -90,13 +90,13 @@
                 <div class="flex flex-col gap-4 lg:gap-5 h-full pt-6">
                     <div class="flex-1 rounded-t-[2.5rem] rounded-b-2xl overflow-hidden relative group shadow-sm hover:shadow-md transition-shadow">
                         <div class="hero-slot absolute inset-0 transition-all duration-700 ease-in-out opacity-100 scale-100 blur-0" data-slot="0">
-                            <img src="@heroImages[0]" alt="Gallery Item" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            <img src="@heroImages[0]" alt="Gallery Item" fetchpriority="high" decoding="async" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                         </div>
                         <div class="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-500"></div>
                     </div>
                     <div class="h-32 rounded-t-[2rem] rounded-b-2xl overflow-hidden relative group shadow-sm hover:shadow-md transition-shadow">
                         <div class="hero-slot absolute inset-0 transition-all duration-700 ease-in-out opacity-100 scale-100 blur-0" data-slot="1">
-                            <img src="@heroImages[1]" alt="Gallery Item" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            <img src="@heroImages[1]" alt="Gallery Item" decoding="async" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                         </div>
                         <div class="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-500"></div>
                     </div>
@@ -106,7 +106,7 @@
                 <div class="h-full pb-12">
                     <div class="w-full h-full rounded-t-[2.5rem] rounded-b-2xl overflow-hidden relative group shadow-sm hover:shadow-md transition-shadow">
                         <div class="hero-slot absolute inset-0 transition-all duration-700 ease-in-out opacity-100 scale-100 blur-0" data-slot="2">
-                            <img src="@heroImages[2]" alt="Gallery Item" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            <img src="@heroImages[2]" alt="Gallery Item" decoding="async" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                         </div>
                         <div class="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-500"></div>
                     </div>
@@ -116,7 +116,7 @@
                 <div class="h-full pt-20 pb-20 relative flex justify-center">
                     <div class="w-full h-full rounded-t-[2.5rem] rounded-b-3xl overflow-hidden relative group shadow-md hover:shadow-lg transition-shadow">
                         <div class="hero-slot absolute inset-0 transition-all duration-700 ease-in-out opacity-100 scale-100 blur-0" data-slot="3">
-                            <img src="@heroImages[3]" alt="Gallery Item" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            <img src="@heroImages[3]" alt="Gallery Item" decoding="async" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                         </div>
                         <div class="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-500"></div>
                     </div>
@@ -131,7 +131,7 @@
                 <div class="h-full pt-10 pb-6 hidden lg:block">
                     <div class="w-full h-full rounded-t-[2.5rem] rounded-b-2xl overflow-hidden relative group shadow-sm hover:shadow-md transition-shadow">
                         <div class="hero-slot absolute inset-0 transition-all duration-700 ease-in-out opacity-100 scale-100 blur-0" data-slot="4">
-                            <img src="@heroImages[4]" alt="Gallery Item" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            <img src="@heroImages[4]" alt="Gallery Item" decoding="async" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                         </div>
                         <div class="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-500"></div>
                     </div>
@@ -141,13 +141,13 @@
                 <div class="flex-col gap-4 lg:gap-5 h-full pt-16 hidden lg:flex">
                     <div class="h-28 rounded-t-[2rem] rounded-b-2xl overflow-hidden relative group shadow-sm hover:shadow-md transition-shadow">
                         <div class="hero-slot absolute inset-0 transition-all duration-700 ease-in-out opacity-100 scale-100 blur-0" data-slot="5">
-                            <img src="@heroImages[5]" alt="Gallery Item" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            <img src="@heroImages[5]" alt="Gallery Item" decoding="async" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                         </div>
                         <div class="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-500"></div>
                     </div>
                     <div class="flex-1 rounded-t-[2.5rem] rounded-b-2xl overflow-hidden relative group shadow-sm hover:shadow-md transition-shadow">
                         <div class="hero-slot absolute inset-0 transition-all duration-700 ease-in-out opacity-100 scale-100 blur-0" data-slot="6">
-                            <img src="@heroImages[6]" alt="Gallery Item" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            <img src="@heroImages[6]" alt="Gallery Item" decoding="async" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                         </div>
                         <div class="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-500"></div>
                     </div>
@@ -162,7 +162,7 @@
                     var withCta = i == 3;
                     <div class="w-[80vw] flex-shrink-0 h-[350px] rounded-t-[2.5rem] rounded-b-2xl snap-center relative shadow-sm overflow-hidden group@(withCta ? " flex items-end justify-center pb-8" : "")">
                         <div class="hero-slot absolute inset-0 transition-all duration-700 ease-in-out opacity-100 scale-100 blur-0" data-slot="@i">
-                            <img src="@heroImages[i]" alt="Gallery Item" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            <img src="@heroImages[i]" alt="Gallery Item" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                         </div>
                         @if (withCta)
                         {
@@ -286,8 +286,8 @@
                                 <div class="absolute top-2 left-2 z-20 bg-red-500 text-white font-black text-sm px-3 py-0.5 rounded-full uppercase tracking-wider transform -rotate-2 group-hover:rotate-0 transition-transform duration-300 shadow-md">
                                     -@discount%
                                 </div>
-                                <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=600" : product.ImageUrl)"
-                                     alt="@product.Name"
+                                <img src="@(ImageUrls.Sized(string.IsNullOrEmpty(product.ImageUrl) ? "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=600" : product.ImageUrl, 500))"
+                                     alt="@product.Name" width="500" height="600" loading="lazy" decoding="async"
                                      class="absolute inset-0 w-full h-full object-cover object-center grayscale group-hover:grayscale-0 transition-all duration-700 scale-100 group-hover:scale-105 mix-blend-multiply" />
                                 <div class="absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors duration-500"></div>
                             </div>
