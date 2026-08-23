@@ -1,0 +1,193 @@
+@model ProductDetailsViewModel
+@{
+    ViewData["Title"] = Model.Product.Name;
+    var product = Model.Product;
+    var gallery = new List<string>();
+    if (!string.IsNullOrEmpty(product.ImageUrl)) gallery.Add(product.ImageUrl);
+    gallery.AddRange(product.GalleryImages.Where(g => !string.IsNullOrEmpty(g)));
+    gallery = gallery.Distinct().ToList();
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+    var inWishlist = ViewBag.InWishlist as bool? ?? false;
+}
+
+<main class="min-h-screen bg-background px-4 py-8 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-7xl space-y-8">
+        <nav class="text-sm text-neutral-500">
+            <a asp-controller="Home" asp-action="Index" class="hover:text-primary-600">Home</a>
+            <span class="mx-2">/</span>
+            <span>@product.Category</span>
+            @if (!string.IsNullOrEmpty(product.Subcategory))
+            {
+                <span class="mx-2">/</span><span>@product.Subcategory</span>
+            }
+            <span class="mx-2">/</span>
+            <span class="text-foreground">@product.Name</span>
+        </nav>
+
+        @if (!string.IsNullOrEmpty(Model.StatusMessage))
+        {
+            <div class="rounded-xl px-4 py-3 text-sm font-medium @(Model.StatusIsError ? "bg-danger-500/15 text-danger-600" : "bg-success-500/15 text-success-600")">@Model.StatusMessage</div>
+        }
+
+        <section class="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+            <div class="space-y-4 rounded-3xl border border-border bg-white p-4 shadow-sm">
+                <div class="overflow-hidden rounded-2xl bg-neutral-100 flex items-center justify-center">
+                    @if (gallery.Any())
+                    {
+                        <img src="@gallery[0]" alt="@product.Name" class="h-[480px] w-full object-cover" />
+                    }
+                    else
+                    {
+                        <div class="flex h-[480px] items-center justify-center text-neutral-500">No image</div>
+                    }
+                </div>
+                @if (gallery.Count > 1)
+                {
+                    <div class="flex gap-3 overflow-x-auto pb-2">
+                        @foreach (var image in gallery)
+                        {
+                            <div class="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-neutral-200">
+                                <img src="@image" alt="@product.Name" class="h-full w-full object-cover" />
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="space-y-6">
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2">
+                        @if (!string.IsNullOrEmpty(product.Badge))
+                        {
+                            <span class="rounded-full bg-primary-600/10 px-3 py-1 text-sm font-semibold text-primary-700">@product.Badge</span>
+                        }
+                        <span class="text-sm text-neutral-500">@product.Brand</span>
+                    </div>
+                    <h1 class="text-3xl font-bold text-foreground">@product.Name</h1>
+                    <p class="text-lg text-neutral-600">@(string.IsNullOrEmpty(product.ShortDescription) ? product.Description : product.ShortDescription)</p>
+                    <div class="flex items-center gap-3 text-sm text-neutral-600">
+                        <span class="font-semibold text-amber-600">&#9733; @(product.AverageRating.ToString("0.0"))</span>
+                        <span>@product.ReviewCount reviews</span>
+                        <span class="text-primary-600">SKU: @product.Sku</span>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl border border-border bg-white p-5 shadow-sm">
+                    <div class="flex items-end gap-3">
+                        <span class="text-3xl font-bold text-foreground">&#2547;@(product.Price.ToString("0.##"))</span>
+                        @if (product.OriginalPrice.HasValue)
+                        {
+                            <span class="text-lg text-neutral-400 line-through">&#2547;@(product.OriginalPrice.Value.ToString("0.##"))</span>
+                            <span class="rounded-full bg-danger-500/10 px-3 py-1 font-semibold text-danger-600 text-sm">Save @Math.Round(((product.OriginalPrice.Value - product.Price) / product.OriginalPrice.Value) * 100)%</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="rounded-2xl border border-border bg-white p-5 shadow-sm space-y-4">
+                    <form asp-controller="Cart" asp-action="Add" method="post" class="space-y-4">
+                        <input type="hidden" name="ProductId" value="@product.Id" />
+                        <input type="hidden" name="ReturnUrl" value="@returnUrl" />
+                        <div class="flex items-center justify-between">
+                            <span class="font-semibold text-foreground">Availability</span>
+                            <span class="font-medium @(product.Stock > 0 ? "text-success-600" : "text-danger-600")">@(string.IsNullOrEmpty(product.StockStatus) ? (product.Stock > 0 ? "In Stock" : "Out of Stock") : product.StockStatus)</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <label for="Quantity" class="font-semibold text-foreground">Quantity</label>
+                            <input type="number" id="Quantity" name="Quantity" min="1" max="@(Math.Max(product.Stock, 1))" value="1"
+                                   class="w-20 rounded-lg border border-border px-3 py-2 text-center" />
+                        </div>
+                        <button type="submit" class="w-full rounded-full bg-primary-600 px-5 py-3 font-semibold text-white hover:bg-primary-700 transition disabled:opacity-50" @(product.Stock <= 0 ? Html.Raw("disabled") : null)>Add to Cart</button>
+                    </form>
+
+                    <form asp-controller="Wishlist" asp-action="Toggle" method="post">
+                        <input type="hidden" name="ProductId" value="@product.Id" />
+                        <input type="hidden" name="ReturnUrl" value="@returnUrl" />
+                        <button type="submit" class="w-full rounded-full border px-5 py-3 font-semibold transition @(inWishlist ? "border-danger-500 text-danger-500 bg-danger-500/10" : "border-border text-foreground hover:border-neutral-400")">
+                            @(inWishlist ? "&#9829; In Wishlist &mdash; Remove" : "&#9825; Add to Wishlist")
+                        </button>
+                    </form>
+
+                    <div class="text-sm text-neutral-600 pt-2 border-t border-border">
+                        <p>Delivery: @(product.DeliveryEstimate ?? "Estimated in 2-4 business days")</p>
+                        <p>Returns: @(product.ReturnPolicy ?? "Easy 7-day return policy")</p>
+                        <p>Warranty: @(product.Warranty ?? "12-month seller warranty")</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+            <div class="rounded-3xl border border-border bg-white p-6 shadow-sm">
+                <h2 class="text-2xl font-semibold text-foreground">Product Description</h2>
+                <div class="mt-4 space-y-4 text-neutral-600">
+                    <p>@product.Description</p>
+                    @if (product.Specs.Any())
+                    {
+                        <div class="mt-6 overflow-hidden rounded-2xl border border-border">
+                            <div class="bg-neutral-50 px-4 py-3 font-semibold text-foreground">Specifications</div>
+                            <div class="divide-y divide-border">
+                                @foreach (var spec in product.Specs)
+                                {
+                                    <div class="grid grid-cols-[140px_1fr] px-4 py-3 text-sm">
+                                        <span class="font-medium text-neutral-500">@spec.Name</span>
+                                        <span>@spec.Value</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="rounded-3xl border border-border bg-white p-6 shadow-sm">
+                    <h3 class="text-xl font-semibold text-foreground">Write a Review</h3>
+                    @if (!Model.IsSignedIn)
+                    {
+                        <p class="mt-3 text-sm text-neutral-500">Please <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@returnUrl" class="text-primary-600 font-semibold underline">sign in</a> to leave a review.</p>
+                    }
+                    else
+                    {
+                        <form asp-controller="Reviews" asp-action="Create" method="post" class="mt-4 space-y-3">
+                            <input type="hidden" name="productId" value="@product.Id" />
+                            <select name="rating" class="w-full rounded-xl border border-border px-3 py-2">
+                                @for (var r = 5; r >= 1; r--)
+                                {
+                                    <option value="@r" selected="@(r == Model.Rating)">@r star@(r > 1 ? "s" : "")</option>
+                                }
+                            </select>
+                            <input name="title" value="@Model.ReviewTitle" placeholder="Review title" class="w-full rounded-xl border border-border px-3 py-2" />
+                            <textarea name="comment" placeholder="Share your thoughts" rows="4" class="w-full rounded-xl border border-border px-3 py-2">@Model.Comment</textarea>
+                            <button type="submit" class="rounded-full bg-primary-600 px-4 py-2 font-semibold text-white hover:bg-primary-700 transition">Submit Review</button>
+                        </form>
+                    }
+                </div>
+
+                <div class="rounded-3xl border border-border bg-white p-6 shadow-sm">
+                    <h3 class="text-xl font-semibold text-foreground">Customer Reviews</h3>
+                    <div class="mt-4 space-y-4">
+                        @if (!Model.Reviews.Any())
+                        {
+                            <p class="text-sm text-neutral-500">No reviews yet.</p>
+                        }
+                        @foreach (var review in Model.Reviews)
+                        {
+                            <div class="rounded-2xl border border-border p-4">
+                                <div class="flex items-center justify-between">
+                                    <div class="font-semibold text-foreground">@(string.IsNullOrEmpty(review.Title) ? "Review" : review.Title)</div>
+                                    <div class="text-amber-600">@(new string('\u2605', Math.Clamp(review.Rating, 0, 5)))</div>
+                                </div>
+                                <p class="mt-2 text-sm text-neutral-600">@review.Comment</p>
+                                @if (review.SellerReply != null)
+                                {
+                                    <div class="mt-3 rounded-xl bg-neutral-50 p-3 text-sm text-neutral-600">Seller reply: @review.SellerReply.Text</div>
+                                }
+                                <p class="mt-2 text-xs text-neutral-400">@review.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>

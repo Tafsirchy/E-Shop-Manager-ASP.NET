@@ -1,0 +1,35 @@
+@{
+    ViewData["Title"] = "FAQ";
+    var faqs = new[]
+    {
+        ("How long does shipping take?", "Domestic orders typically arrive within 2-4 business days. International shipping can take anywhere from 7-14 business days depending on the destination and customs processing."),
+        ("What is your return policy?", "We accept returns within 14 days of delivery for all unworn and unwashed items with original tags attached. Final sale items cannot be returned or exchanged."),
+        ("Do you ship internationally?", "Yes, we ship globally. Shipping costs and delivery times are calculated at checkout based on your location."),
+        ("How do the VIP Club tiers work?", "Our VIP Club is based on your lifetime spend. As you reach new thresholds, your tier is automatically upgraded, unlocking exclusive discounts, early access to drops, and priority customer service."),
+        ("Can I cancel or change my order?", "Orders can only be modified or canceled within 1 hour of placement. After this window, our fulfillment team begins processing the order and changes cannot be guaranteed."),
+        ("Are your garments sustainable?", "We are committed to ethical production. 80% of our collections use recycled or organic materials, and we partner exclusively with factories that enforce fair labor practices.")
+    };
+}
+<main class="bg-white min-h-screen pt-12 pb-32">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-20 text-center">
+            <h1 class="text-[12vw] sm:text-[8vw] leading-none font-black tracking-tighter uppercase text-black mb-4">F.A.Q.</h1>
+            <p class="text-neutral-500 font-medium uppercase tracking-widest text-sm">Frequently Asked Questions</p>
+        </div>
+
+        <div class="border-t-2 border-black">
+            @foreach (var (question, answer) in faqs)
+            {
+                <div class="border-b-2 border-neutral-200 py-8 group hover:border-black transition-colors duration-300">
+                    <h3 class="text-xl sm:text-2xl font-bold uppercase tracking-tight text-black mb-4 group-hover:text-red-500 transition-colors">@question</h3>
+                    <p class="text-neutral-500 text-lg leading-relaxed max-w-3xl">@answer</p>
+                </div>
+            }
+        </div>
+
+        <div class="mt-20 text-center">
+            <p class="text-neutral-500 mb-4">Still have questions?</p>
+            <a asp-controller="Home" asp-action="Contact" class="inline-block border-2 border-black px-10 py-4 text-black font-black uppercase tracking-widest text-sm hover:bg-black hover:text-white transition-colors">Contact Support</a>
+        </div>
+    </div>
+</main>

@@ -1,0 +1,117 @@
+@model ProductListViewModel
+@{
+    ViewData["Title"] = "Shop";
+    var categories = new[]
+    {
+        ("tshirts", "T-Shirts & Tops"), ("hoodies", "Hoodies & Sweatshirts"), ("jackets", "Jackets & Outerwear"),
+        ("pants", "Pants & Denim"), ("activewear", "Activewear"), ("dresses", "Dresses"), ("tops", "Tops & Blouses"),
+        ("knitwear", "Knitwear"), ("jeans", "Jeans & Skirts"), ("swimwear", "Swimwear"), ("bags", "Bags & Backpacks"),
+        ("jewelry", "Jewelry & Watches"), ("sunglasses", "Sunglasses"), ("hats", "Hats & Beanies"), ("shoes", "Footwear")
+    };
+}
+<main class="min-h-screen p-8 bg-background">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-4xl font-bold text-foreground mb-8">E-Shop Products</h1>
+
+        <form method="get" class="flex flex-col sm:flex-row gap-4 mb-8">
+            <input type="text" name="search" value="@Model.Search" placeholder="Search products..."
+                   class="flex-1 px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-foreground bg-card" />
+            <select name="category" class="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-card text-foreground">
+                <option value="">All Categories</option>
+                @foreach (var (value, label) in categories)
+                {
+                    <option value="@value" selected="@(Model.Category == value)">@label</option>
+                }
+            </select>
+            <select name="sort" class="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-card text-foreground">
+                <option value="" selected="@string.IsNullOrEmpty(Model.Sort)">Sort: Default</option>
+                <option value="new" selected="@(Model.Sort == "new")">Sort: Newest</option>
+                <option value="price-asc" selected="@(Model.Sort == "price-asc")">Price: Low to High</option>
+                <option value="price-desc" selected="@(Model.Sort == "price-desc")">Price: High to Low</option>
+                <option value="stock" selected="@(Model.Sort == "stock")">Sort: Most Stock</option>
+                <option value="name-asc" selected="@(Model.Sort == "name-asc")">Name: A &rarr; Z</option>
+            </select>
+            <button type="submit" class="px-6 py-2 rounded-lg bg-primary-600 text-white font-semibold hover:bg-primary-700 transition">Apply</button>
+        </form>
+
+        <div id="api-live-results" class="hidden mb-8 border border-primary-200 bg-card rounded-xl p-4">
+            <p class="text-xs font-semibold uppercase tracking-wider text-primary-600 mb-3">Live results via REST API (fetch)</p>
+            <div id="api-live-items" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+        </div>
+
+        @if (Model.Products.Any())
+        {
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                @foreach (var product in Model.Products)
+                {
+                    <partial name="_ProductCard" model="product" />
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-20 bg-card rounded-xl border border-border">
+                <p class="text-neutral-500 text-lg">No products found.</p>
+            </div>
+        }
+    </div>
+</main>
+
+@section Scripts {
+    <script>
+        (function () {
+            var input = document.querySelector('input[name="search"]');
+            var box = document.getElementById('api-live-results');
+            var grid = document.getElementById('api-live-items');
+            if (!input || !box || !grid) return;
+
+            var timer = null;
+            input.addEventListener('input', function () {
+                clearTimeout(timer);
+                timer = setTimeout(run, 300);
+            });
+
+            function run() {
+                var q = input.value.trim();
+                if (!q) { box.classList.add('hidden'); grid.innerHTML = ''; return; }
+
+                fetch('/api/products?search=' + encodeURIComponent(q) + '&limit=8')
+                    .then(function (r) { return r.json(); })
+                    .then(function (items) {
+                        grid.innerHTML = '';
+                        if (!Array.isArray(items) || items.length === 0) {
+                            box.classList.remove('hidden');
+                            grid.innerHTML = '<p class="col-span-full text-neutral-500 text-sm py-4 text-center">No API results for "' +
+                                q.replace(/</g, '&lt;') + '"</p>';
+                            return;
+                        }
+                        items.forEach(function (p) {
+                            var a = document.createElement('a');
+                            a.href = '/Products/Details/' + p.id;
+                            a.className = 'flex items-center gap-3 p-2 rounded-lg hover:bg-primary-50 transition';
+                            var img = document.createElement('img');
+                            img.src = p.imageUrl || '';
+                            img.alt = p.name;
+                            img.className = 'w-12 h-12 object-cover rounded-md bg-neutral-100 flex-shrink-0';
+                            img.onerror = function () { this.style.visibility = 'hidden'; };
+                            var wrap = document.createElement('div');
+                            wrap.className = 'min-w-0';
+                            var name = document.createElement('p');
+                            name.className = 'text-sm font-medium text-foreground truncate';
+                            name.textContent = p.name;
+                            var price = document.createElement('p');
+                            price.className = 'text-xs font-bold text-primary-600';
+                            price.textContent = '$' + Number(p.price).toFixed(2);
+                            wrap.appendChild(name);
+                            wrap.appendChild(price);
+                            a.appendChild(img);
+                            a.appendChild(wrap);
+                            grid.appendChild(a);
+                        });
+                        box.classList.remove('hidden');
+                    })
+                    .catch(function () { box.classList.add('hidden'); });
+            }
+        })();
+    </script>
+}

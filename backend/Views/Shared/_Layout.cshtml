@@ -1,0 +1,188 @@
+@inject CurrentUser Me
+@inject CartService CartSvc
+@{
+    var cartCount = 0;
+    try
+    {
+        var cart = await CartSvc.GetCartAsync(Me.OwnerKey);
+        cartCount = cart?.Items.Sum(i => i.Quantity) ?? 0;
+    }
+    catch { }
+    var statusMessage = TempData["StatusMessage"] as string;
+    var statusIsError = TempData["StatusIsError"] as bool? ?? false;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(ViewData["Title"] != null ? ViewData["Title"] + " - E-Shop" : "E-Shop | Curated Goods")</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="bg-background text-foreground font-sans antialiased flex flex-col min-h-screen">
+
+    <div class="sticky top-0 z-50 w-full">
+        <header class="bg-white border-b border-neutral-100 shadow-sm">
+            <nav class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+
+                <div class="flex-shrink-0 flex items-center">
+                    <a asp-controller="Home" asp-action="Index" class="flex items-center -ml-2">
+                        <img src="~/Asset/Logo.png" alt="E-Shop Logo" class="h-20 sm:h-24 w-auto object-contain mix-blend-multiply drop-shadow-xl" />
+                    </a>
+                </div>
+
+                <div class="hidden md:flex flex-1 items-center justify-center gap-10 h-full">
+                    <a asp-controller="Home" asp-action="Index" class="text-[15px] font-bold text-foreground hover:text-primary-600 transition">Home</a>
+                    <a asp-controller="Products" asp-action="Index" asp-route-sort="new" class="text-[15px] font-bold text-foreground hover:text-primary-600 transition">New Arrival</a>
+
+                    <div class="group h-full flex items-center relative">
+                        <a asp-controller="Products" asp-action="Index" class="text-[15px] font-bold text-foreground hover:text-primary-600 transition flex items-center gap-1">
+                            Shop
+                            <svg class="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </a>
+
+                        <div class="absolute top-full left-1/2 -translate-x-1/2 w-[720px] bg-white border-t border-neutral-100 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 rounded-b-2xl overflow-hidden">
+                                                        <div class="grid grid-cols-3 gap-8 p-10">
+                                <div>
+                                    <h3 class="text-black font-black uppercase tracking-widest text-sm mb-5 border-b border-neutral-200 pb-2">Men's Apparel</h3>
+                                    <ul class="space-y-3">
+                                        <li><a asp-controller="Products" asp-action="Index" asp-route-category="tshirts" class="text-neutral-500 hover:text-primary-600 font-medium text-sm transition-colors">T-Shirts &amp; Tops</a></li>
+                                        <li><a asp-controller="Products" asp-action="Index" asp-route-category="hoodies" class="text-neutral-500 hover:text-primary-600 font-medium text-sm transition-colors">Hoodies</a></li>
+                                        <li><a asp-controller="Products" asp-action="Index" asp-route-category="jackets" class="text-neutral-500 hover:text-primary-600 font-medium text-sm transition-colors">Jackets</a></li>
+                                        <li><a asp-controller="Products" asp-action="Index" asp-route-category="pants" class="text-neutral-500 hover:text-primary-600 font-medium text-sm transition-colors">Pants &amp; Denim</a></li>
+                                        <li><a asp-controller="Products" asp-action="Index" asp-route-category="shoes" class="text-neutral-500 hover:text-primary-600 font-medium text-sm transition-colors">Footwear</a></li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h3 class="text-black font-black uppercase tracking-widest text-sm mb-5 border-b border-neutral-200 pb-2">Women's Apparel</h3>
+                                    <ul class="space-y-3">
+                                        <li><a asp-controller="Products" asp-action="Index" asp-route-category="dresses" class="text-neutral-500 hover:text-primary-600 font-medium text-sm transition-colors">Dresses</a></li>
+                                        <li><a asp-controller="Products" asp-action="Index" asp-route-category="tops" class="text-neutral-500 hover:text-primary-600 font-medium text-sm transition-colors">Tops &amp; Blouses</a></li>
+                                        <li><a asp-controller="Products" asp-action="Index" asp-route-category="knitwear" class="text-neutral-500 hover:text-primary-600 font-medium text-sm transition-colors">Knitwear</a></li>
+                                        <li><a asp-controller="Products" asp-action="Index" asp-route-category="jeans" class="text-neutral-500 hover:text-primary-600 font-medium text-sm transition-colors">Jeans &amp; Skirts</a></li>
+                                        <li><a asp-controller="Products" asp-action="Index" asp-route-category="swimwear" class="text-neutral-500 hover:text-primary-600 font-medium text-sm transition-colors">Swimwear</a></li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h3 class="text-black font-black uppercase tracking-widest text-sm mb-5 border-b border-neutral-200 pb-2">Accessories</h3>
+                                    <ul class="space-y-3">
+                                        <li><a asp-controller="Products" asp-action="Index" asp-route-category="bags" class="text-neutral-500 hover:text-primary-600 font-medium text-sm transition-colors">Bags &amp; Backpacks</a></li>
+                                        <li><a asp-controller="Products" asp-action="Index" asp-route-category="jewelry" class="text-neutral-500 hover:text-primary-600 font-medium text-sm transition-colors">Jewelry &amp; Watches</a></li>
+                                        <li><a asp-controller="Products" asp-action="Index" asp-route-category="sunglasses" class="text-neutral-500 hover:text-primary-600 font-medium text-sm transition-colors">Sunglasses</a></li>
+                                        <li><a asp-controller="Products" asp-action="Index" asp-route-category="hats" class="text-neutral-500 hover:text-primary-600 font-medium text-sm transition-colors">Hats &amp; Beanies</a></li>
+                                        <li><a asp-controller="Subscriptions" asp-action="Index" class="text-primary-600 font-bold text-sm transition-colors">Subscription Plans</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a asp-controller="Home" asp-action="Contact" class="text-[15px] font-bold text-foreground hover:text-primary-600 transition">Contact</a>
+                    <a asp-controller="Home" asp-action="About" class="text-[15px] font-bold text-foreground hover:text-primary-600 transition">About Us</a>
+                </div>
+
+                <div class="flex items-center gap-5">
+                                        <form asp-controller="Products" asp-action="Index" method="get" class="hidden lg:flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-1.5 focus-within:border-primary-400 transition">
+                        <svg class="h-4 w-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="search" name="search" placeholder="Search products..." class="w-32 xl:w-44 bg-transparent border-none text-sm outline-none text-foreground placeholder-neutral-400" />
+                    </form>
+
+                    <a asp-controller="Wishlist" asp-action="Index" class="text-foreground hover:text-danger-500 transition" aria-label="Wishlist">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    </a>
+
+                    <a asp-controller="Cart" asp-action="Index" class="relative text-foreground hover:text-primary-600 transition" aria-label="Cart">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4z"></path></svg>
+                        @if (cartCount > 0)
+                        {
+                            <span class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full text-xs px-2">@cartCount</span>
+                        }
+                    </a>
+
+                    @if (Me.IsAuthenticated)
+                    {
+                        if (Me.Role == "Admin")
+                        {
+                            <a asp-controller="Admin" asp-action="Index" class="text-[14px] font-bold text-foreground border-2 border-foreground px-4 py-1.5 rounded-full hover:bg-foreground hover:text-white transition-colors">Admin</a>
+                        }
+                        <a asp-controller="Membership" asp-action="Index" class="hidden sm:block text-sm font-semibold text-neutral-600 hover:text-primary-600 transition max-w-[9rem] truncate">Hi, @(Me.Name.Split(' ').FirstOrDefault())</a>
+                        <form asp-controller="Account" asp-action="Logout" method="post">
+                            <button type="submit" class="text-[14px] font-bold text-foreground border-2 border-foreground px-5 py-1.5 rounded-full hover:bg-foreground hover:text-white transition-colors">Sign Out</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" class="text-[14px] font-bold text-foreground border-2 border-foreground px-5 py-1.5 rounded-full hover:bg-foreground hover:text-white transition-colors">Sign In</a>
+                    }
+                </div>
+            </nav>
+        </header>
+    </div>
+
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full" data-autohide>
+            <div class="rounded-lg px-4 py-3 text-sm font-medium @(statusIsError ? "bg-danger-500/15 text-danger-600" : "bg-success-500/15 text-success-600")">
+                @statusMessage
+            </div>
+        </div>
+    }
+
+    <main class="flex-1">
+        @RenderBody()
+    </main>
+
+    <footer class="bg-neutral-950 text-neutral-400 pt-16 pb-8 border-t border-neutral-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-16 lg:gap-8 mb-16">
+                <div class="md:col-span-12 lg:col-span-5">
+                    <h3 class="text-white text-4xl sm:text-5xl font-black uppercase tracking-tighter mb-4 leading-none">Join The<br />List</h3>
+                    <p class="text-sm mb-10 max-w-sm text-neutral-500 leading-relaxed">Sign up for exclusive drops, early sale access, and tailored fashion updates.</p>
+                    <form asp-controller="Home" asp-action="Newsletter" method="post" class="relative max-w-md group">
+                        <input type="email" name="email" placeholder="YOUR EMAIL" class="w-full bg-transparent border-b-2 border-neutral-800 py-4 pr-12 text-white font-mono text-sm placeholder-neutral-600 focus:outline-none focus:border-white transition-colors uppercase" />
+                        <button type="submit" aria-label="Subscribe to newsletter" class="absolute right-0 top-1/2 transform -translate-y-1/2 text-white font-black group-hover:text-red-500 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                        </button>
+                    </form>
+                </div>
+                <div class="hidden lg:block lg:col-span-2"></div>
+                <div class="grid grid-cols-2 gap-8 sm:gap-12 md:col-span-12 lg:col-span-5">
+                    <div>
+                        <h4 class="text-white font-bold mb-8 uppercase tracking-widest text-xs">Shop</h4>
+                        <ul class="space-y-5 text-sm font-medium">
+                            <li><a asp-controller="Products" asp-action="Index" asp-route-sort="new" class="hover:text-white inline-block transition-transform duration-300">New Arrivals</a></li>
+                            <li><a asp-controller="Products" asp-action="Index" class="hover:text-white inline-block transition-transform duration-300">All Products</a></li>
+                            <li><a asp-controller="Subscriptions" asp-action="Index" class="hover:text-white inline-block transition-transform duration-300">Subscriptions</a></li>
+                            <li><a asp-controller="Home" asp-action="Lookbook" class="hover:text-white inline-block transition-transform duration-300">Lookbook</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-bold mb-8 uppercase tracking-widest text-xs">Company</h4>
+                        <ul class="space-y-5 text-sm font-medium">
+                            <li><a asp-controller="Home" asp-action="About" class="hover:text-white inline-block transition-transform duration-300">About Us</a></li>
+                            <li><a asp-controller="Home" asp-action="Contact" class="hover:text-white inline-block transition-transform duration-300">Contact</a></li>
+                            <li><a asp-controller="Home" asp-action="Faq" class="hover:text-white inline-block transition-transform duration-300">FAQ</a></li>
+                            <li><a asp-controller="Home" asp-action="Shipping" class="hover:text-white inline-block transition-transform duration-300">Shipping</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-full flex items-center justify-center border-t border-neutral-900 pt-12 mb-6 overflow-hidden">
+                <h2 class="text-[18vw] leading-none font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-neutral-900 text-center tracking-tighter opacity-20 select-none">ESHOP</h2>
+            </div>
+
+            <div class="flex flex-col md:flex-row justify-between items-center text-[0.65rem] sm:text-xs font-mono tracking-widest uppercase text-neutral-600 gap-6">
+                <div class="flex gap-6 sm:gap-8">
+                    <a href="#" class="hover:text-white transition-colors">Instagram</a>
+                    <a href="#" class="hover:text-white transition-colors">X / Twitter</a>
+                    <a href="#" class="hover:text-white transition-colors">Tiktok</a>
+                </div>
+                <p>&copy; @DateTime.Now.Year E-SHOP. ALL RIGHTS RESERVED.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)</body>
+</html>

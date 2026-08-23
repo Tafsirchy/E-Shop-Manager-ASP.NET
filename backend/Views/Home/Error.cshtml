@@ -1,0 +1,11 @@
+@{
+    var statusCode = ViewData["StatusCode"] as int? ?? 500;
+}
+<main class="min-h-[70vh] flex items-center justify-center px-4 py-16 bg-background">
+    <div class="max-w-lg w-full bg-card p-10 rounded-2xl shadow-sm border border-border text-center">
+        <div class="text-primary-600 text-6xl font-black mb-4">@statusCode</div>
+        <h1 class="text-2xl font-bold text-foreground mb-3">@(statusCode == 404 ? "Page not found" : "Something went wrong")</h1>
+        <p class="text-neutral-500 mb-8">@(statusCode == 404 ? "The page you're looking for doesn't exist or may have moved." : "An unexpected error occurred. Please try again later.")</p>
+        <a asp-controller="Home" asp-action="Index" class="inline-block bg-primary-600 text-white px-8 py-3 rounded-full hover:bg-primary-700 font-semibold">Back to Home</a>
+    </div>
+</main>

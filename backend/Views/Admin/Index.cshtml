@@ -1,0 +1,80 @@
+@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+<main class="min-h-screen p-8 bg-background">
+    <div class="max-w-6xl mx-auto">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+            <h1 class="text-3xl font-bold text-foreground">Admin Dashboard</h1>
+            <nav class="flex flex-wrap gap-2 text-sm font-semibold">
+                <a asp-action="Index" class="rounded-full bg-primary-600 px-4 py-2 text-white">Dashboard</a>
+                <a asp-controller="Products" asp-action="Create" class="rounded-full border border-border px-4 py-2 hover:border-neutral-400 transition">+ New Product</a>
+                <a asp-action="Products" class="rounded-full border border-border px-4 py-2 hover:border-neutral-400 transition">Products</a>
+                <a asp-action="Users" class="rounded-full border border-border px-4 py-2 hover:border-neutral-400 transition">Users</a>
+                <a asp-action="Subscriptions" class="rounded-full border border-border px-4 py-2 hover:border-neutral-400 transition">Packages</a>
+                <a asp-action="Coupons" class="rounded-full border border-border px-4 py-2 hover:border-neutral-400 transition">Coupons</a>
+                <a asp-action="LowStock" class="rounded-full border border-danger-300 px-4 py-2 text-danger-600 hover:bg-danger-500/10 transition">Low Stock</a>
+            </nav>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Message))
+        {
+            <div class="mb-6 rounded-lg px-4 py-3 text-sm font-medium @(Model.MessageIsError ? "bg-danger-500/15 text-danger-600" : "bg-success-500/15 text-success-600")">@Model.Message</div>
+        }
+
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-10">
+            <div class="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                <p class="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-2">Total Users</p>
+                <p class="text-3xl font-black text-foreground">@Model.TotalUsers.ToString("N0")</p>
+            </div>
+            <div class="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                <p class="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-2">Total Orders</p>
+                <p class="text-3xl font-black text-foreground">@Model.TotalOrders.ToString("N0")</p>
+            </div>
+            <div class="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                <p class="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-2">Revenue</p>
+                <p class="text-3xl font-black text-success-600">&#2547;@Model.TotalRevenue.ToString("N0")</p>
+            </div>
+            <div class="rounded-2xl border border-border bg-card p-6 shadow-sm @(Model.LowStockCount > 0 ? "border-danger-300" : "")">
+                <p class="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-2">Low Stock</p>
+                <p class="text-3xl font-black @(Model.LowStockCount > 0 ? "text-danger-500" : "text-foreground")">@Model.LowStockCount.ToString("N0")</p>
+            </div>
+        </div>
+
+        <section class="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 class="text-xl font-bold text-foreground mb-4">Recent Orders</h2>
+            @if (!Model.RecentOrders.Any())
+            {
+                <p class="text-sm text-neutral-500">No orders yet.</p>
+            }
+            else
+            {
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="border-b border-border text-xs uppercase tracking-widest text-neutral-500">
+                                <th class="py-3 pr-4">Order</th>
+                                <th class="py-3 pr-4">Customer</th>
+                                <th class="py-3 pr-4">Items</th>
+                                <th class="py-3 pr-4">Status</th>
+                                <th class="py-3 pr-4 text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border text-sm">
+                            @foreach (var order in Model.RecentOrders)
+                            {
+                                <tr>
+                                    <td class="py-3 pr-4 font-mono text-neutral-500"><a asp-controller="Orders" asp-action="Details" asp-route-id="@order.Id" class="hover:text-primary-600">#@(order.Id?.Length > 8 ? order.Id[..8] : order.Id)</a></td>
+                                    <td class="py-3 pr-4">@order.UserId</td>
+                                    <td class="py-3 pr-4">@order.Items.Count</td>
+                                    <td class="py-3 pr-4">@order.Status</td>
+                                    <td class="py-3 pr-4 text-right font-semibold">&#2547;@order.TotalAmount.ToString("0.##")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+    </div>
+</main>

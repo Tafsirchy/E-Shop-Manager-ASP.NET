@@ -1,0 +1,53 @@
+@model MembershipIndexViewModel
+@{
+    ViewData["Title"] = "Your Membership";
+    var membership = Model.Membership;
+}
+<main class="min-h-screen p-8 bg-background">
+    <div class="max-w-3xl mx-auto">
+        <h1 class="text-3xl font-bold text-foreground mb-8">Your Membership</h1>
+
+        <div class="grid gap-6 sm:grid-cols-3 mb-8">
+            <div class="rounded-2xl border border-border bg-card p-6 shadow-sm text-center">
+                <p class="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-2">Tier</p>
+                <p class="text-2xl font-black @(membership.CurrentRole == "Premium" ? "text-primary-600" : "text-foreground")">@membership.CurrentRole</p>
+            </div>
+            <div class="rounded-2xl border border-border bg-card p-6 shadow-sm text-center">
+                <p class="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-2">Lifetime Spend</p>
+                <p class="text-2xl font-black text-foreground">&#2547;@membership.TotalSpent.ToString("0.##")</p>
+            </div>
+            <div class="rounded-2xl border border-border bg-card p-6 shadow-sm text-center">
+                <p class="text-sm font-semibold text-neutral-500 uppercase tracking-wide mb-2">Reward Points</p>
+                <p class="text-2xl font-black text-accent-600">@membership.RewardPoints</p>
+            </div>
+        </div>
+
+        @if (membership.CurrentRole == "Premium")
+        {
+            <div class="rounded-2xl border border-primary-300 bg-primary-600/5 p-6 mb-8">
+                <h2 class="font-bold text-primary-700 mb-1">&#9733; Premium perks active</h2>
+                <p class="text-sm text-neutral-600">You receive 10% off every order automatically at checkout.</p>
+            </div>
+        }
+        else
+        {
+            <div class="rounded-2xl border border-border bg-card p-6 mb-8">
+                <h2 class="font-bold text-foreground mb-1">Reach Premium</h2>
+                <p class="text-sm text-neutral-600 mb-4">Spend &#2547;500 lifetime to unlock 10% off all orders.</p>
+                <div class="h-3 rounded-full bg-neutral-100 overflow-hidden">
+                    <div class="h-full rounded-full bg-primary-600" style="width:@(Math.Clamp((double)(membership.TotalSpent / 500m) * 100, 0, 100))%"></div>
+                </div>
+            </div>
+        }
+
+        <div class="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 class="text-lg font-bold text-foreground mb-4">Claim a Coupon</h2>
+            <form asp-controller="Membership" asp-action="ClaimCoupon" method="post" class="flex flex-col sm:flex-row gap-3">
+                <input type="text" name="Code" placeholder="Enter coupon code" required
+                       class="flex-1 rounded-xl border border-border px-4 py-3 focus:ring-2 focus:ring-primary-500 outline-none uppercase" />
+                <button type="submit" class="rounded-full bg-primary-600 px-8 py-3 font-semibold text-white hover:bg-primary-700 transition">Claim</button>
+            </form>
+            <p class="mt-3 text-xs text-neutral-400">Coupons are redeemed against your reward points balance.</p>
+        </div>
+    </div>
+</main>

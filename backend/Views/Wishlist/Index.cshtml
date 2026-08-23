@@ -1,0 +1,49 @@
+@model WishlistIndexViewModel
+@{
+    ViewData["Title"] = "Wishlist";
+}
+<main class="min-h-screen p-8 bg-background">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-foreground mb-8">Your Wishlist</h1>
+
+        @if (!Model.Rows.Any())
+        {
+            <div class="rounded-2xl border border-border bg-card p-16 text-center">
+                <p class="text-lg text-neutral-500 mb-6">Nothing saved yet. Tap the heart on any product to add it here.</p>
+                <a asp-controller="Products" asp-action="Index" class="inline-block rounded-full bg-primary-600 px-8 py-3 font-semibold text-white hover:bg-primary-700 transition">Browse Products</a>
+            </div>
+        }
+        else
+        {
+            <div class="space-y-4">
+                @foreach (var row in Model.Rows)
+                {
+                    <div class="flex items-center gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
+                        <a asp-controller="Products" asp-action="Details" asp-route-id="@row.Item.ProductId" class="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
+                            @if (!string.IsNullOrEmpty(row.Product?.ImageUrl))
+                            {
+                                <img src="@row.Product.ImageUrl" alt="@(row.Product?.Name ?? "Product")" class="h-full w-full object-cover" />
+                            }
+                            else
+                            {
+                                <span class="flex h-full w-full items-center justify-center text-xs text-neutral-400">No image</span>
+                            }
+                        </a>
+                        <div class="flex-1 min-w-0">
+                            <a asp-controller="Products" asp-action="Details" asp-route-id="@row.Item.ProductId" class="font-semibold text-foreground hover:text-primary-600">@(row.Product?.Name ?? row.Item.ProductId)</a>
+                            @if (row.Product != null)
+                            {
+                                <p class="text-sm text-neutral-500">&#2547;@row.Product.Price.ToString("0.##") &middot; @(row.Product.Stock > 0 ? $"{row.Product.Stock} in stock" : "Out of stock")</p>
+                            }
+                            <p class="text-xs text-neutral-400 mt-1">Added @row.Item.AddedAt.ToLocalTime().ToString("MMM d, yyyy")</p>
+                        </div>
+                        <form asp-controller="Wishlist" asp-action="Remove" method="post">
+                            <input type="hidden" name="itemId" value="@row.Item.ItemId" />
+                            <button type="submit" class="rounded-full border border-border px-4 py-1.5 text-sm font-semibold text-danger-500 hover:border-danger-400 transition">Remove</button>
+                        </form>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</main>

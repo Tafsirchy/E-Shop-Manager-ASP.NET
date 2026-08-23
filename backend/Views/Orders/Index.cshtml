@@ -1,0 +1,42 @@
+@model OrdersIndexViewModel
+@{
+    ViewData["Title"] = "Your Orders";
+}
+<main class="min-h-screen p-8 bg-background">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-foreground mb-8">Your Orders</h1>
+
+        @if (!Model.Orders.Any())
+        {
+            <div class="rounded-2xl border border-border bg-card p-16 text-center">
+                <p class="text-lg text-neutral-500 mb-6">You haven't placed any orders yet.</p>
+                <a asp-controller="Products" asp-action="Index" class="inline-block rounded-full bg-primary-600 px-8 py-3 font-semibold text-white hover:bg-primary-700 transition">Start Shopping</a>
+            </div>
+        }
+        else
+        {
+            <div class="space-y-4">
+                @foreach (var order in Model.Orders)
+                {
+                    <a asp-controller="Orders" asp-action="Details" asp-route-id="@order.Id"
+                       class="block rounded-2xl border border-border bg-card p-6 shadow-sm hover:border-primary-300 transition">
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                            <span class="font-mono text-sm text-neutral-500">#@order.Id</span>
+                            <span class="rounded-full px-3 py-1 text-sm font-semibold @(order.Status switch
+                                {
+                                    "Delivered" => "bg-success-500/15 text-success-600",
+                                    "Cancelled" => "bg-danger-500/15 text-danger-600",
+                                    "Pending" => "bg-warning-500/15 text-warning-500",
+                                    _ => "bg-primary-600/10 text-primary-700"
+                                })">@order.Status</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <p class="text-sm text-neutral-500">@order.Items.Count item(s) &middot; @order.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</p>
+                            <p class="font-bold text-foreground">&#2547;@order.TotalAmount.ToString("0.##")</p>
+                        </div>
+                    </a>
+                }
+            </div>
+        }
+    </div>
+</main>

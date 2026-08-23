@@ -1,0 +1,25 @@
+@model Product
+@{
+    ViewData["Title"] = "Edit Product";
+}
+<main class="min-h-screen p-8 bg-background">
+    <div class="max-w-2xl mx-auto">
+        <nav class="text-sm text-neutral-500 mb-6 flex justify-between">
+            <a asp-action="Products" asp-controller="Admin" class="hover:text-primary-600">&larr; Back to Products</a>
+            <a asp-action="Details" asp-controller="Products" asp-route-id="@Model.Id" class="hover:text-primary-600">View on store &rarr;</a>
+        </nav>
+        <h1 class="text-3xl font-bold text-foreground mb-8">Edit Product</h1>
+
+        <div class="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <div asp-validation-summary="ModelOnly" class="mb-4 rounded-lg px-4 py-3 text-sm font-medium bg-danger-500/15 text-danger-600"></div>
+            <form asp-controller="Products" asp-action="Edit" asp-route-id="@Model.Id" method="post" class="space-y-4">
+                @await Html.PartialAsync("_ProductFormFields", Model)
+                <button type="submit" class="w-full rounded-full bg-primary-600 py-3 font-semibold text-white hover:bg-primary-700 transition">Save Changes</button>
+            </form>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

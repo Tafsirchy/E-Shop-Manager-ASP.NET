@@ -1,0 +1,98 @@
+@model Product
+@{
+    var categories = new[]
+    {
+        "tshirts", "hoodies", "jackets", "pants", "activewear", "dresses", "tops",
+        "knitwear", "jeans", "swimwear", "bags", "jewelry", "sunglasses", "hats", "shoes"
+    };
+}
+<div>
+    <label asp-for="Name" class="block text-sm font-semibold mb-1.5">Name *</label>
+    <input asp-for="Name" class="w-full rounded-xl border border-border px-4 py-2.5 focus:ring-2 focus:ring-primary-500 outline-none" />
+    <span asp-validation-for="Name" class="mt-1 block text-sm text-danger-600"></span>
+</div>
+<div class="grid sm:grid-cols-2 gap-4">
+    <div>
+        <label asp-for="Brand" class="block text-sm font-semibold mb-1.5">Brand</label>
+        <input asp-for="Brand" class="w-full rounded-xl border border-border px-4 py-2.5 focus:ring-2 focus:ring-primary-500 outline-none" />
+    </div>
+    <div>
+        <label asp-for="Sku" class="block text-sm font-semibold mb-1.5">SKU</label>
+        <input asp-for="Sku" class="w-full rounded-xl border border-border px-4 py-2.5 focus:ring-2 focus:ring-primary-500 outline-none" />
+    </div>
+</div>
+<div class="grid sm:grid-cols-2 gap-4">
+    <div>
+        <label asp-for="Category" class="block text-sm font-semibold mb-1.5">Category *</label>
+        <select asp-for="Category" class="w-full rounded-xl border border-border px-4 py-2.5 outline-none bg-white">
+            @foreach (var category in categories)
+            {
+                <option value="@category">@category</option>
+            }
+        </select>
+        <span asp-validation-for="Category" class="mt-1 block text-sm text-danger-600"></span>
+    </div>
+    <div>
+        <label asp-for="Subcategory" class="block text-sm font-semibold mb-1.5">Subcategory</label>
+        <input asp-for="Subcategory" class="w-full rounded-xl border border-border px-4 py-2.5 focus:ring-2 focus:ring-primary-500 outline-none" />
+    </div>
+</div>
+<div>
+    <label asp-for="ShortDescription" class="block text-sm font-semibold mb-1.5">Short Description</label>
+    <input asp-for="ShortDescription" class="w-full rounded-xl border border-border px-4 py-2.5 focus:ring-2 focus:ring-primary-500 outline-none" />
+</div>
+<div>
+    <label asp-for="Description" class="block text-sm font-semibold mb-1.5">Description</label>
+    <textarea asp-for="Description" rows="4" class="w-full rounded-xl border border-border px-4 py-2.5 focus:ring-2 focus:ring-primary-500 outline-none"></textarea>
+</div>
+<div class="grid sm:grid-cols-3 gap-4">
+    <div>
+        <label asp-for="Price" class="block text-sm font-semibold mb-1.5">Price *</label>
+        <input asp-for="Price" type="number" min="0" step="0.01" required class="w-full rounded-xl border border-border px-4 py-2.5 focus:ring-2 focus:ring-primary-500 outline-none" />
+    </div>
+    <div>
+        <label asp-for="OriginalPrice" class="block text-sm font-semibold mb-1.5">Original Price</label>
+        <input asp-for="OriginalPrice" type="number" min="0" step="0.01" class="w-full rounded-xl border border-border px-4 py-2.5 focus:ring-2 focus:ring-primary-500 outline-none" />
+    </div>
+    <div>
+        <label asp-for="Stock" class="block text-sm font-semibold mb-1.5">Stock</label>
+        <input asp-for="Stock" type="number" min="0" class="w-full rounded-xl border border-border px-4 py-2.5 focus:ring-2 focus:ring-primary-500 outline-none" />
+    </div>
+</div>
+<div class="grid sm:grid-cols-2 gap-4">
+    <div>
+        <label asp-for="StockStatus" class="block text-sm font-semibold mb-1.5">Stock Status</label>
+        <select asp-for="StockStatus" class="w-full rounded-xl border border-border px-4 py-2.5 outline-none bg-white">
+            <option>In Stock</option>
+            <option>Out of Stock</option>
+            <option>Preorder</option>
+            <option>Discontinued</option>
+        </select>
+    </div>
+    <div>
+        <label asp-for="Badge" class="block text-sm font-semibold mb-1.5">Badge</label>
+        <input asp-for="Badge" placeholder="New, Sale, Bestseller..." class="w-full rounded-xl border border-border px-4 py-2.5 focus:ring-2 focus:ring-primary-500 outline-none" />
+    </div>
+</div>
+<div>
+    <label asp-for="ImageUrl" class="block text-sm font-semibold mb-1.5">Main Image URL</label>
+    <input asp-for="ImageUrl" placeholder="https://..." class="w-full rounded-xl border border-border px-4 py-2.5 focus:ring-2 focus:ring-primary-500 outline-none" />
+</div>
+<div>
+    <label class="block text-sm font-semibold mb-1.5">Gallery Images <span class="font-normal text-neutral-400">(one URL per line)</span></label>
+    <textarea name="galleryInput" rows="3" class="w-full rounded-xl border border-border px-4 py-2.5 focus:ring-2 focus:ring-primary-500 outline-none font-mono text-sm">@string.Join("\n", Model.GalleryImages)</textarea>
+</div>
+<div class="grid sm:grid-cols-3 gap-4">
+    <div>
+        <label asp-for="Warranty" class="block text-sm font-semibold mb-1.5">Warranty</label>
+        <input asp-for="Warranty" class="w-full rounded-xl border border-border px-4 py-2.5 focus:ring-2 focus:ring-primary-500 outline-none" />
+    </div>
+    <div>
+        <label asp-for="DeliveryEstimate" class="block text-sm font-semibold mb-1.5">Delivery Estimate</label>
+        <input asp-for="DeliveryEstimate" class="w-full rounded-xl border border-border px-4 py-2.5 focus:ring-2 focus:ring-primary-500 outline-none" />
+    </div>
+    <div>
+        <label asp-for="ReturnPolicy" class="block text-sm font-semibold mb-1.5">Return Policy</label>
+        <input asp-for="ReturnPolicy" class="w-full rounded-xl border border-border px-4 py-2.5 focus:ring-2 focus:ring-primary-500 outline-none" />
+    </div>
+</div>
