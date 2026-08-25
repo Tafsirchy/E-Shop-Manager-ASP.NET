@@ -3,14 +3,25 @@ using EShopManager.API.Models;
 using EShopManager.API.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.ResponseCompression;
-using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
+using Serilog;
+using Stripe;
 using System.IO.Compression;
-using System.Text;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .WriteTo.File("logs/eshop-log-.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
+
+try
+{
+    Log.Information("Starting web application");
+
+    var builder = WebApplication.CreateBuilder(args);
+    builder.Host.UseSerilog();
+
+    StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 
 builder.Services.AddControllersWithViews();
 
@@ -38,10 +49,6 @@ builder.Services.AddResponseCompression(options =>
 builder.Services.Configure<BrotliCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
 builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
 
-var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()!;
-builder.Services.AddSingleton(jwtSettings);
-builder.Services.AddScoped<TokenService>();
-
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -53,20 +60,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.IsEssential = true;
-    })
-    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = jwtSettings.Issuer,
-            ValidateAudience = true,
-            ValidAudience = jwtSettings.Audience,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
-            ClockSkew = TimeSpan.FromSeconds(30)
-        };
     });
 
 builder.Services.AddAuthorization();
@@ -204,4 +197,13 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-app.Run();
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
