@@ -21,7 +21,7 @@ namespace EShopManager.API.Services
         }
 
         public async Task<Review?> GetByIdAsync(string id) =>
-            await _reviewsCollection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync();
+            await _reviewsCollection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync().ConfigureAwait(false);
 
         public async Task<List<Review>> GetForProductAsync(string productId, string? status = "approved", int skip = 0, int limit = 10)
         {
@@ -47,7 +47,7 @@ namespace EShopManager.API.Services
                 return (null, "Rating must be between 1 and 5.");
             }
 
-            var existing = await _reviewsCollection.Find(x => x.ProductId == request.ProductId && x.UserId == userId && !x.IsDeleted).AnyAsync();
+            var existing = await _reviewsCollection.Find(x => x.ProductId == request.ProductId && x.UserId == userId && !x.IsDeleted).AnyAsync().ConfigureAwait(false);
             if (existing)
             {
                 return (null, "You have already reviewed this product.");
@@ -66,14 +66,14 @@ namespace EShopManager.API.Services
                 Status = "pending"
             };
 
-            await _reviewsCollection.InsertOneAsync(review);
-            await UpdateProductRatingAsync(request.ProductId);
+            await _reviewsCollection.InsertOneAsync(review).ConfigureAwait(false);
+            await UpdateProductRatingAsync(request.ProductId).ConfigureAwait(false);
             return (review, null);
         }
 
         public async Task<(Review? Review, string? Error)> UpdateAsync(string id, ReviewUpdateRequest request, string userId)
         {
-            var review = await _reviewsCollection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync();
+            var review = await _reviewsCollection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync().ConfigureAwait(false);
             if (review == null) return (null, "Review not found.");
             if (review.UserId != userId) return (null, "You can only edit your own review.");
 
@@ -86,14 +86,14 @@ namespace EShopManager.API.Services
                 .Set(x => x.EditedAt, DateTime.UtcNow)
                 .Set(x => x.Status, "pending");
 
-            await _reviewsCollection.UpdateOneAsync(x => x.Id == id, update);
-            await UpdateProductRatingAsync(review.ProductId);
-            return (await GetByIdAsync(id), null);
+            await _reviewsCollection.UpdateOneAsync(x => x.Id == id, update).ConfigureAwait(false);
+            await UpdateProductRatingAsync(review.ProductId).ConfigureAwait(false);
+            return (await GetByIdAsync(id).ConfigureAwait(false), null);
         }
 
         public async Task<(bool Success, string? Error)> DeleteAsync(string id, string userId, bool isAdmin = false)
         {
-            var review = await _reviewsCollection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync();
+            var review = await _reviewsCollection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync().ConfigureAwait(false);
             if (review == null) return (false, "Review not found.");
             if (!isAdmin && review.UserId != userId) return (false, "You can only delete your own review.");
 
@@ -102,17 +102,17 @@ namespace EShopManager.API.Services
                 .Set(x => x.Status, "rejected")
                 .Set(x => x.UpdatedAt, DateTime.UtcNow);
 
-            await _reviewsCollection.UpdateOneAsync(x => x.Id == id, update);
-            await UpdateProductRatingAsync(review.ProductId);
+            await _reviewsCollection.UpdateOneAsync(x => x.Id == id, update).ConfigureAwait(false);
+            await UpdateProductRatingAsync(review.ProductId).ConfigureAwait(false);
             return (true, null);
         }
 
         public async Task<(bool Success, string? Error)> AddSellerReplyAsync(string id, string text, string userId, bool isAdmin = false)
         {
-            var review = await _reviewsCollection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync();
+            var review = await _reviewsCollection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync().ConfigureAwait(false);
             if (review == null) return (false, "Review not found.");
 
-            var product = await _productsCollection.Find(x => x.Id == review.ProductId).FirstOrDefaultAsync();
+            var product = await _productsCollection.Find(x => x.Id == review.ProductId).FirstOrDefaultAsync().ConfigureAwait(false);
             if (product == null) return (false, "Product not found.");
 
             if (!isAdmin && product.Category != "seller")
@@ -121,23 +121,23 @@ namespace EShopManager.API.Services
             }
 
             var update = Builders<Review>.Update.Set(x => x.SellerReply, new ReviewReply { Text = text, RepliedAt = DateTime.UtcNow });
-            await _reviewsCollection.UpdateOneAsync(x => x.Id == id, update);
+            await _reviewsCollection.UpdateOneAsync(x => x.Id == id, update).ConfigureAwait(false);
             return (true, null);
         }
 
         public async Task<List<Review>> GetPendingAsync() =>
-            await _reviewsCollection.Find(x => x.Status == "pending" && !x.IsDeleted).SortByDescending(x => x.CreatedAt).ToListAsync();
+            await _reviewsCollection.Find(x => x.Status == "pending" && !x.IsDeleted).SortByDescending(x => x.CreatedAt).ToListAsync().ConfigureAwait(false);
 
         private async Task UpdateProductRatingAsync(string productId)
         {
-            var reviews = await _reviewsCollection.Find(x => x.ProductId == productId && x.Status == "approved" && !x.IsDeleted).ToListAsync();
+            var reviews = await _reviewsCollection.Find(x => x.ProductId == productId && x.Status == "approved" && !x.IsDeleted).ToListAsync().ConfigureAwait(false);
             var aggregate = ReviewAggregationHelper.CalculateAverage(reviews.Select(x => new ReviewSummary { Rating = x.Rating }));
 
             var update = Builders<Product>.Update
                 .Set(x => x.AverageRating, aggregate.AverageRating)
                 .Set(x => x.ReviewCount, aggregate.ReviewCount);
 
-            await _productsCollection.UpdateOneAsync(x => x.Id == productId, update);
+            await _productsCollection.UpdateOneAsync(x => x.Id == productId, update).ConfigureAwait(false);
         }
     }
 }
