@@ -58,18 +58,42 @@ namespace EShopManager.API.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Subscribe(string packageId)
         {
-            try
+            var package = await _subscriptionService.GetPackageAsync(packageId);
+            if (package == null)
             {
-                var sub = await _subscriptionService.SubscribeAsync(_me.Email, packageId);
-                TempData["StatusMessage"] = "Subscription activated successfully!";
-                TempData["StatusIsError"] = false;
-            }
-            catch (Exception ex)
-            {
-                TempData["StatusMessage"] = ex.Message;
+                TempData["StatusMessage"] = "Package not found.";
                 TempData["StatusIsError"] = true;
+                return RedirectToAction(nameof(Index));
             }
-            return RedirectToAction(nameof(Index));
+
+            var domain = $"{Request.Scheme}://{Request.Host}";
+            var options = new Stripe.Checkout.SessionCreateOptions
+            {
+                LineItems = new List<Stripe.Checkout.SessionLineItemOptions>
+                {
+                    new Stripe.Checkout.SessionLineItemOptions
+                    {
+                        PriceData = new Stripe.Checkout.SessionLineItemPriceDataOptions
+                        {
+                            UnitAmount = (long)(package.Price * 100),
+                            Currency = "bdt",
+                            ProductData = new Stripe.Checkout.SessionLineItemPriceDataProductDataOptions
+                            {
+                                Name = package.Name,
+                            },
+                        },
+                        Quantity = 1,
+                    },
+                },
+                Mode = "payment",
+                SuccessUrl = domain + Url.Action("PaymentSuccess", "Subscriptions", new { type = "prebuilt", packageId }),
+                CancelUrl = domain + Url.Action("PaymentCancel", "Subscriptions"),
+            };
+
+            var service = new Stripe.Checkout.SessionService();
+            var session = service.Create(options);
+
+            return Redirect(session.Url);
         }
 
         [HttpPost]
@@ -102,11 +126,56 @@ namespace EShopManager.API.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            var membership = await _membershipService.GetMembershipAsync(_me.Email);
+            var quote = _subscriptionService.BuildCustomPackage(features, 500m, membership.TotalSpent);
+
+            var domain = $"{Request.Scheme}://{Request.Host}";
+            var options = new Stripe.Checkout.SessionCreateOptions
+            {
+                LineItems = new List<Stripe.Checkout.SessionLineItemOptions>
+                {
+                    new Stripe.Checkout.SessionLineItemOptions
+                    {
+                        PriceData = new Stripe.Checkout.SessionLineItemPriceDataOptions
+                        {
+                            UnitAmount = (long)(quote.Price * 100),
+                            Currency = "bdt",
+                            ProductData = new Stripe.Checkout.SessionLineItemPriceDataProductDataOptions
+                            {
+                                Name = quote.Name,
+                            },
+                        },
+                        Quantity = 1,
+                    },
+                },
+                Mode = "payment",
+                SuccessUrl = domain + Url.Action("PaymentSuccess", "Subscriptions", new { type = "custom", features = string.Join(",", features) }),
+                CancelUrl = domain + Url.Action("PaymentCancel", "Subscriptions"),
+            };
+
+            var service = new Stripe.Checkout.SessionService();
+            var session = service.Create(options);
+
+            return Redirect(session.Url);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> PaymentSuccess(string type, string? packageId, string? features)
+        {
             try
             {
-                var membership = await _membershipService.GetMembershipAsync(_me.Email);
-                await _subscriptionService.SubscribeCustomAsync(_me.Email, features, membership.TotalSpent);
-                TempData["StatusMessage"] = "Custom plan purchased successfully!";
+                if (type == "prebuilt" && !string.IsNullOrEmpty(packageId))
+                {
+                    await _subscriptionService.SubscribeAsync(_me.Email, packageId);
+                }
+                else if (type == "custom" && !string.IsNullOrEmpty(features))
+                {
+                    var featureList = features.Split(',').ToList();
+                    var membership = await _membershipService.GetMembershipAsync(_me.Email);
+                    await _subscriptionService.SubscribeCustomAsync(_me.Email, featureList, membership.TotalSpent);
+                }
+                TempData["StatusMessage"] = "Payment successful! Subscription activated.";
                 TempData["StatusIsError"] = false;
             }
             catch (Exception ex)
@@ -114,6 +183,14 @@ namespace EShopManager.API.Controllers
                 TempData["StatusMessage"] = ex.Message;
                 TempData["StatusIsError"] = true;
             }
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet]
+        public IActionResult PaymentCancel()
+        {
+            TempData["StatusMessage"] = "Payment was cancelled.";
+            TempData["StatusIsError"] = true;
             return RedirectToAction(nameof(Index));
         }
     }
