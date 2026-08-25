@@ -9,77 +9,39 @@
         ("jewelry", "Jewelry & Watches"), ("sunglasses", "Sunglasses"), ("hats", "Hats & Beanies"), ("shoes", "Footwear")
     };
 }
-<main class="min-h-screen bg-neutral-50/50 pb-16 relative">
-    <!-- Decorative background elements -->
-    <div class="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-primary-100/50 to-transparent -z-10 pointer-events-none"></div>
-    <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-primary-200/30 rounded-full blur-[100px] -z-10 -translate-y-1/2 translate-x-1/3"></div>
-    <div class="absolute top-40 left-0 w-[300px] h-[300px] bg-accent-200/20 rounded-full blur-[80px] -z-10 -translate-x-1/2"></div>
+<main class="min-h-screen p-8 bg-background">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-4xl font-bold text-foreground mb-8">E-Shop Products</h1>
 
-    <!-- Hero Section -->
-    <div class="pt-16 pb-10 px-8 text-center max-w-4xl mx-auto">
-        <h1 class="text-5xl font-extrabold text-slate-900 tracking-tight mb-4 drop-shadow-sm">Discover Our <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-accent-500">Premium</span> Collection</h1>
-        <p class="text-lg text-slate-600 max-w-2xl mx-auto">Explore the finest selection of curated styles tailored just for you. Find exactly what you need with our advanced filters.</p>
-    </div>
+        <form method="get" class="flex flex-col sm:flex-row gap-4 mb-8">
+            <input type="text" name="search" value="@Model.Search" placeholder="Search products..."
+                   class="flex-1 px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-foreground bg-card" />
+            <select name="category" class="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-card text-foreground">
+                <option value="">All Categories</option>
+                @foreach (var (value, label) in categories)
+                {
+                    <option value="@value" selected="@(Model.Category == value)">@label</option>
+                }
+            </select>
+            <select name="sort" class="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-card text-foreground">
+                <option value="" selected="@string.IsNullOrEmpty(Model.Sort)">Sort: Default</option>
+                <option value="new" selected="@(Model.Sort == "new")">Sort: Newest</option>
+                <option value="price-asc" selected="@(Model.Sort == "price-asc")">Price: Low to High</option>
+                <option value="price-desc" selected="@(Model.Sort == "price-desc")">Price: High to Low</option>
+                <option value="stock" selected="@(Model.Sort == "stock")">Sort: Most Stock</option>
+                <option value="name-asc" selected="@(Model.Sort == "name-asc")">Name: A &rarr; Z</option>
+            </select>
+            <button type="submit" class="px-6 py-2 rounded-lg bg-primary-600 text-white font-semibold hover:bg-primary-700 transition">Apply</button>
+        </form>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        <!-- Glassmorphism Filter Bar -->
-        <div class="bg-white/70 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/50 rounded-2xl p-4 mb-10 sticky top-24 z-30 transition-all">
-            <form method="get" class="flex flex-col md:flex-row items-center gap-4">
-                <div class="relative flex-1 w-full group">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary-500 transition-colors">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                    </div>
-                    <input type="text" name="search" value="@Model.Search" placeholder="Search for something amazing..."
-                           class="w-full pl-10 pr-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 focus:bg-white outline-none text-slate-800 transition-all placeholder:text-slate-400 shadow-sm" />
-                </div>
-                
-                <div class="flex flex-col sm:flex-row w-full md:w-auto gap-4">
-                    <div class="relative w-full sm:w-48">
-                        <select name="category" class="w-full appearance-none px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 focus:bg-white outline-none text-slate-700 transition-all shadow-sm cursor-pointer">
-                            <option value="">All Categories</option>
-                            @foreach (var (value, label) in categories)
-                            {
-                                <option value="@value" selected="@(Model.Category == value)">@label</option>
-                            }
-                        </select>
-                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-slate-400">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                    </div>
-
-                    <div class="relative w-full sm:w-48">
-                        <select name="sort" class="w-full appearance-none px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 focus:bg-white outline-none text-slate-700 transition-all shadow-sm cursor-pointer">
-                            <option value="" selected="@string.IsNullOrEmpty(Model.Sort)">Sort: Default</option>
-                            <option value="new" selected="@(Model.Sort == "new")">Sort: Newest</option>
-                            <option value="price-asc" selected="@(Model.Sort == "price-asc")">Price: Low to High</option>
-                            <option value="price-desc" selected="@(Model.Sort == "price-desc")">Price: High to Low</option>
-                            <option value="stock" selected="@(Model.Sort == "stock")">Sort: Most Stock</option>
-                            <option value="name-asc" selected="@(Model.Sort == "name-asc")">Name: A &rarr; Z</option>
-                        </select>
-                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-slate-400">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="w-full sm:w-auto px-8 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 text-white font-bold hover:shadow-lg hover:shadow-primary-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center gap-2">
-                        <span>Apply</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <div id="api-live-results" class="hidden mb-10 overflow-hidden backdrop-blur-xl bg-white/60 border border-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] relative before:absolute before:inset-0 before:bg-gradient-to-br before:from-primary-50/50 before:to-transparent before:-z-10 z-20">
-            <div class="p-4 border-b border-white/40 bg-white/30 flex items-center gap-2">
-                <div class="w-2 h-2 rounded-full bg-success-500 animate-pulse"></div>
-                <p class="text-xs font-bold uppercase tracking-widest text-primary-700">Live Search Results</p>
-            </div>
-            <div id="api-live-items" class="grid grid-cols-2 md:grid-cols-4 gap-4 p-5"></div>
+        <div id="api-live-results" class="hidden mb-8 border border-primary-200 bg-card rounded-xl p-4">
+            <p class="text-xs font-semibold uppercase tracking-wider text-primary-600 mb-3">Live results via REST API (fetch)</p>
+            <div id="api-live-items" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
         </div>
 
         @if (Model.Products.Any())
         {
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 @foreach (var product in Model.Products)
                 {
                     <partial name="_ProductCard" model="product" />
@@ -88,13 +50,8 @@
         }
         else
         {
-            <div class="flex flex-col items-center justify-center py-32 bg-white/40 backdrop-blur-md rounded-3xl border border-white/60 shadow-sm">
-                <div class="w-24 h-24 mb-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-300">
-                    <svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                </div>
-                <h3 class="text-2xl font-bold text-slate-800 mb-2">No products found</h3>
-                <p class="text-slate-500 text-center max-w-md">We couldn't find anything matching your current filters. Try adjusting your search or clearing some filters.</p>
-                <a href="/Products" class="mt-8 px-6 py-2.5 rounded-full bg-slate-900 text-white font-medium hover:bg-slate-800 transition shadow-md hover:shadow-xl">Clear All Filters</a>
+            <div class="text-center py-20 bg-card rounded-xl border border-border">
+                <p class="text-neutral-500 text-lg">No products found.</p>
             </div>
         }
     </div>
