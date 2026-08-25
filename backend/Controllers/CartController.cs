@@ -3,18 +3,19 @@ using EShopManager.API.Services;
 using EShopManager.API.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Stripe;
 
 namespace EShopManager.API.Controllers
 {
     public class CartController : Controller
     {
         private readonly CartService _cartService;
-        private readonly ProductService _productService;
+        private readonly EShopManager.API.Services.ProductService _productService;
         private readonly OrderService _orderService;
         private readonly MembershipService _membershipService;
         private readonly CurrentUser _me;
 
-        public CartController(CartService cartService, ProductService productService,
+        public CartController(CartService cartService, EShopManager.API.Services.ProductService productService,
             OrderService orderService, MembershipService membershipService, CurrentUser me)
         {
             _cartService = cartService;
@@ -126,17 +127,73 @@ namespace EShopManager.API.Controllers
 
             try
             {
+                // Place the order in the database (defaults to "Pending" status)
                 var placed = await _orderService.PlaceOrderAsync(order);
-                await _cartService.ClearCartAsync(owner);
-                TempData["OrderPlaced"] = true;
-                return RedirectToAction("Details", "Orders", new { id = placed.Id });
+
+                // Setup Stripe Checkout
+                var domain = $"{Request.Scheme}://{Request.Host}";
+                var options = new Stripe.Checkout.SessionCreateOptions
+                {
+                    LineItems = new List<Stripe.Checkout.SessionLineItemOptions>
+                    {
+                        new Stripe.Checkout.SessionLineItemOptions
+                        {
+                            PriceData = new Stripe.Checkout.SessionLineItemPriceDataOptions
+                            {
+                                UnitAmount = (long)(placed.TotalAmount * 100),
+                                Currency = "bdt",
+                                ProductData = new Stripe.Checkout.SessionLineItemPriceDataProductDataOptions
+                                {
+                                    Name = $"E-Shop Order #{placed.Id?[..8]}",
+                                },
+                            },
+                            Quantity = 1,
+                        },
+                    },
+                    Mode = "payment",
+                    SuccessUrl = domain + Url.Action("PaymentSuccess", "Cart", new { orderId = placed.Id }),
+                    CancelUrl = domain + Url.Action("PaymentCancel", "Cart", new { orderId = placed.Id }),
+                };
+
+                var service = new Stripe.Checkout.SessionService();
+                var session = service.Create(options);
+
+                return Redirect(session.Url);
             }
-            catch (InvalidOperationException ex)
+            catch (Exception ex)
             {
                 TempData["StatusMessage"] = ex.Message;
                 TempData["StatusIsError"] = true;
                 return RedirectToAction(nameof(Index));
             }
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> PaymentSuccess(string orderId)
+        {
+            var owner = _me.Email;
+            
+            // Mark order as paid/processing
+            await _orderService.UpdateOrderStatusAsync(orderId, "Processing");
+            
+            // Clear the cart only upon successful payment
+            await _cartService.ClearCartAsync(owner);
+
+            TempData["OrderPlaced"] = true;
+            return RedirectToAction("Details", "Orders", new { id = orderId });
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> PaymentCancel(string orderId)
+        {
+            // Optionally, mark the order as cancelled or leave it pending
+            await _orderService.UpdateOrderStatusAsync(orderId, "Cancelled");
+            
+            TempData["StatusMessage"] = "Payment was cancelled. Order has been marked as Cancelled.";
+            TempData["StatusIsError"] = true;
+            return RedirectToAction(nameof(Index));
         }
 
         private IActionResult RedirectToLocal(string? returnUrl)
