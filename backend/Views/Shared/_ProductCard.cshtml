@@ -4,49 +4,61 @@
     var inWishlist = ViewBag.InWishlist as bool? ?? false;
     var cardSrcset = ImageUrls.Srcset(Model.ImageUrl);
 }
-<div class="group relative bg-card rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-border flex flex-col overflow-hidden">
-    <div class="img-shimmer h-48 bg-gradient-to-br from-neutral-100 to-neutral-200 rounded-xl mb-4 flex items-center justify-center overflow-hidden relative">
-        @if (!string.IsNullOrEmpty(Model.ImageUrl))
-        {
-            <a asp-controller="Products" asp-action="Details" asp-route-id="@Model.Id" class="absolute inset-0">
-                <img src="@ImageUrls.Sized(Model.ImageUrl, 400)" alt="@Model.Name" width="400" height="300" loading="lazy" decoding="async" @(string.IsNullOrEmpty(cardSrcset) ? null : Html.Raw($"srcset=\"{cardSrcset}\" sizes=\"(max-width: 639px) 100vw, (max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw\"")) class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-            </a>
-        }
-        else
-        {
-            <span class="text-neutral-400">No Image</span>
-        }
-        <div class="absolute top-2 right-2 z-20">
+<div class="group relative bg-white/80 backdrop-blur-sm rounded-[24px] shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-500 p-3 border border-white flex flex-col h-full hover:-translate-y-2 z-10">
+    <div class="h-56 bg-slate-100 rounded-[18px] mb-4 flex items-center justify-center overflow-hidden relative shadow-inner">
+        <!-- Wishlist Button -->
+        <div class="absolute top-3 right-3 z-20">
             <form asp-controller="Wishlist" asp-action="Toggle" method="post">
                 <input type="hidden" name="ProductId" value="@Model.Id" />
                 <input type="hidden" name="ReturnUrl" value="@returnUrl" />
                 <button type="submit" aria-label="Toggle wishlist" title="Toggle wishlist"
-                        class="flex h-9 w-9 items-center justify-center rounded-full bg-white/95 shadow-md transition hover:scale-110 @(inWishlist ? "text-danger-500" : "text-neutral-400")">
-                    <svg class="w-5 h-5" fill="@(inWishlist ? "currentColor" : "none")" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                        class="flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-md bg-white/70 shadow-lg border border-white/50 transition-all duration-300 hover:scale-110 hover:bg-white @(inWishlist ? "text-danger-500" : "text-slate-400 hover:text-danger-400")">
+                    <svg class="w-5 h-5 transition-transform duration-300 @(inWishlist ? "scale-110" : "")" fill="@(inWishlist ? "currentColor" : "none")" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
                 </button>
             </form>
         </div>
+
+        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+        {
+            <a asp-controller="Products" asp-action="Details" asp-route-id="@Model.Id" class="absolute inset-0 block">
+                <div class="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/10 transition-colors duration-300 z-10"></div>
+                <img src="@ImageUrls.Sized(Model.ImageUrl, 400)" alt="@Model.Name" width="400" height="300" loading="lazy" decoding="async" @(string.IsNullOrEmpty(cardSrcset) ? null : Html.Raw($"srcset=\"{cardSrcset}\" sizes=\"(max-width: 639px) 100vw, (max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw\"")) 
+                     class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 mix-blend-multiply" />
+            </a>
+        }
+        else
+        {
+            <a asp-controller="Products" asp-action="Details" asp-route-id="@Model.Id" class="absolute inset-0 flex items-center justify-center group-hover:bg-slate-200 transition-colors duration-300">
+                <span class="text-slate-400 font-medium">No Image</span>
+            </a>
+        }
     </div>
 
-    <div class="flex items-start justify-between gap-3 mb-3">
-        <div class="min-w-0">
-            <a asp-controller="Products" asp-action="Details" asp-route-id="@Model.Id" class="text-lg font-semibold text-foreground line-clamp-1 hover:text-primary-600">@Model.Name</a>
-            <p class="text-sm text-neutral-500">@Model.Category</p>
+    <div class="flex flex-col flex-1 px-2 pb-2">
+        <div class="mb-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">@Model.Category</span>
         </div>
-        <span class="text-lg font-bold text-foreground whitespace-nowrap">&#2547;@(Model.Price.ToString("0.##"))</span>
-    </div>
-
-    <div class="mt-auto flex items-center justify-between gap-3">
-        <span class="text-sm font-medium px-2.5 py-1 rounded-full @(Model.Stock > 10 ? "bg-success-600/20 text-success-600" : Model.Stock > 0 ? "bg-warning-500/20 text-warning-500" : "bg-danger-500/20 text-danger-500")">
-            @(Model.Stock > 0 ? $"{Model.Stock} in stock" : "Out of stock")
-        </span>
-        <form asp-controller="Cart" asp-action="Add" method="post">
-            <input type="hidden" name="ProductId" value="@Model.Id" />
-            <input type="hidden" name="Quantity" value="1" />
-            <input type="hidden" name="ReturnUrl" value="@returnUrl" />
-            <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-accent-500 px-4 py-2 text-sm font-bold text-white transition-all duration-200 hover:bg-accent-600 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100" @(Model.Stock <= 0 ? Html.Raw("disabled") : null)>
-                Add to Cart
-            </button>
-        </form>
+        
+        <a asp-controller="Products" asp-action="Details" asp-route-id="@Model.Id" class="text-lg font-bold text-slate-800 line-clamp-1 mb-2 hover:text-primary-600 transition-colors">@Model.Name</a>
+        
+        <div class="mt-auto pt-4 flex items-end justify-between">
+            <div class="flex flex-col">
+                <span class="text-xs font-medium mb-1 @(Model.Stock > 10 ? "text-success-600" : Model.Stock > 0 ? "text-warning-600" : "text-danger-600") flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full @(Model.Stock > 10 ? "bg-success-500" : Model.Stock > 0 ? "bg-warning-500" : "bg-danger-500") @(Model.Stock > 0 && Model.Stock <= 10 ? "animate-pulse" : "")"></span>
+                    @(Model.Stock > 0 ? $"{Model.Stock} in stock" : "Out of stock")
+                </span>
+                <span class="text-xl font-extrabold text-slate-900 tracking-tight">&#2547;@(Model.Price.ToString("0.##"))</span>
+            </div>
+            
+            <form asp-controller="Cart" asp-action="Add" method="post">
+                <input type="hidden" name="ProductId" value="@Model.Id" />
+                <input type="hidden" name="Quantity" value="1" />
+                <input type="hidden" name="ReturnUrl" value="@returnUrl" />
+                <button type="submit" aria-label="Add to cart"
+                        class="relative overflow-hidden group/btn flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md transition-all duration-300 hover:bg-primary-600 hover:shadow-xl hover:shadow-primary-500/30 hover:-translate-y-1 active:translate-y-0 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none disabled:transform-none" @(Model.Stock <= 0 ? Html.Raw("disabled") : null)>
+                    <svg class="w-5 h-5 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                </button>
+            </form>
+        </div>
     </div>
 </div>
