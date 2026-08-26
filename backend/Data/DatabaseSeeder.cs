@@ -12,6 +12,7 @@ namespace EShopManager.API.Data
             await MigrateUsersCollectionToCustomersAsync(database);
             await BackfillSecurityStampsAsync(database);
             await BackfillEmailCasingAsync(database);
+            await BackfillOrderHistoryAsync(database);
             var products = database.GetCollection<Product>("Products");
             await SeedAdminUserAsync(database);
 
@@ -263,7 +264,7 @@ namespace EShopManager.API.Data
                 { "bags", new[] {
                     "https://images.unsplash.com/photo-1519744792095-2f2205e87b6f",
                     "https://images.unsplash.com/photo-1519744792096-1e1104d76b5e",
-                    "https://images.unsplash.com/photo-1519744792097-0d0003c65b4d",
+                    "https://images.unsplash.com/photo-1519744792098-ff0012b54a3c",
                     "https://images.unsplash.com/photo-1519744792098-ff0012b54a3c"
                 }},
                 { "jewelry", new[] {
@@ -301,6 +302,28 @@ namespace EShopManager.API.Data
             // Fallback to deterministic picsum
             var seed = Math.Abs((category + idx).GetHashCode()) % 1000;
             return $"https://picsum.photos/seed/{seed}/800/800";
+        }
+
+        private static async Task BackfillOrderHistoryAsync(IMongoDatabase database)
+        {
+            var orders = database.GetCollection<Order>("Orders");
+            var history = database.GetCollection<OrderStatusHistory>("OrderStatusHistory");
+
+            var orderIdsWithHistory = (await history.Distinct(x => x.OrderId, Builders<OrderStatusHistory>.Filter.Empty).ToListAsync()).ToHashSet();
+            var ordersNeedingHistory = await orders.Find(x => x.Id != null && !orderIdsWithHistory.Contains(x.Id!)).ToListAsync();
+
+            if (ordersNeedingHistory.Count == 0) return;
+
+            var toInsert = ordersNeedingHistory.Select(o => new OrderStatusHistory
+            {
+                OrderId = o.Id!,
+                Status = o.Status,
+                Note = "Imported from existing record",
+                CreatedAt = o.CreatedAt
+            }).ToList();
+
+            await history.InsertManyAsync(toInsert);
+            Console.WriteLine($"Backfilled order status history for {toInsert.Count} order(s).");
         }
     }
 }
