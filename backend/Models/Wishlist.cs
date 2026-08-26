@@ -24,7 +24,5 @@ namespace EShopManager.API.Models
         public string ProductId { get; set; } = null!;
         public string? VariantId { get; set; }
         public DateTime AddedAt { get; set; } = DateTime.UtcNow;
-        public bool NotifyOnPriceDrop { get; set; } = false;
-        public string? Notes { get; set; }
     }
 }
