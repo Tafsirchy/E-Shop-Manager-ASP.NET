@@ -9,8 +9,8 @@
         ("jewelry", "Jewelry & Watches"), ("sunglasses", "Sunglasses"), ("hats", "Hats & Beanies"), ("shoes", "Footwear")
     };
 }
-<main class="min-h-screen p-8 bg-background">
-    <div class="max-w-6xl mx-auto">
+<main class="min-h-screen py-8 bg-background">
+    <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
         <h1 class="text-4xl font-bold text-foreground mb-8">E-Shop Products</h1>
 
         <form method="get" class="flex flex-col sm:flex-row gap-4 mb-8">
@@ -47,6 +47,67 @@
                     <partial name="_ProductCard" model="product" />
                 }
             </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                var first = (Model.Page - 1) * Model.PageSize + 1;
+                var last = Math.Min(Model.Page * Model.PageSize, Model.TotalCount);
+                var windowStart = Math.Max(1, Math.Min(Model.Page - 2, Model.TotalPages - 4));
+                var windowEnd = Math.Min(Model.TotalPages, windowStart + 4);
+                <nav class="mt-10 flex flex-col items-center gap-3" aria-label="Product pages">
+                    <div class="flex items-center gap-1.5">
+                        @if (Model.Page > 1)
+                        {
+                            <a asp-controller="Products" asp-action="Index" asp-route-search="@Model.Search" asp-route-category="@Model.Category"
+                               asp-route-sort="@Model.Sort" asp-route-page="@(Model.Page - 1)"
+                               class="h-9 px-4 inline-flex items-center rounded-full border border-border text-sm font-semibold text-foreground hover:border-primary-600 hover:text-primary-600 transition">Previous</a>
+                        }
+                        else
+                        {
+                            <span class="h-9 px-4 inline-flex items-center rounded-full border border-border text-sm font-semibold text-neutral-300 cursor-not-allowed">Previous</span>
+                        }
+
+                        @if (windowStart > 1)
+                        {
+                            <a asp-controller="Products" asp-action="Index" asp-route-page="1" asp-route-search="@Model.Search" asp-route-category="@Model.Category" asp-route-sort="@Model.Sort"
+                               class="w-9 h-9 inline-flex items-center justify-center rounded-full border border-border text-sm font-semibold text-foreground hover:border-primary-600 hover:text-primary-600 transition">1</a>
+                            <span class="px-1 text-neutral-400">&hellip;</span>
+                        }
+                        @for (var p = windowStart; p <= windowEnd; p++)
+                        {
+                            if (p == Model.Page)
+                            {
+                                <span aria-current="page" class="w-9 h-9 inline-flex items-center justify-center rounded-full bg-primary-600 border border-primary-600 text-sm font-bold text-white">@p</span>
+                            }
+                            else
+                            {
+                                <a asp-controller="Products" asp-action="Index" asp-route-search="@Model.Search" asp-route-category="@Model.Category"
+                                   asp-route-sort="@Model.Sort" asp-route-page="@p"
+                                   class="w-9 h-9 inline-flex items-center justify-center rounded-full border border-border text-sm font-semibold text-foreground hover:border-primary-600 hover:text-primary-600 transition">@p</a>
+                            }
+                        }
+                        @if (windowEnd < Model.TotalPages)
+                        {
+                            <span class="px-1 text-neutral-400">&hellip;</span>
+                            <a asp-controller="Products" asp-action="Index" asp-route-search="@Model.Search" asp-route-category="@Model.Category"
+                               asp-route-sort="@Model.Sort" asp-route-page="@Model.TotalPages"
+                               class="w-9 h-9 inline-flex items-center justify-center rounded-full border border-border text-sm font-semibold text-foreground hover:border-primary-600 hover:text-primary-600 transition">@Model.TotalPages</a>
+                        }
+
+                        @if (Model.Page < Model.TotalPages)
+                        {
+                            <a asp-controller="Products" asp-action="Index" asp-route-search="@Model.Search" asp-route-category="@Model.Category"
+                               asp-route-sort="@Model.Sort" asp-route-page="@(Model.Page + 1)"
+                               class="h-9 px-4 inline-flex items-center rounded-full border border-border text-sm font-semibold text-foreground hover:border-primary-600 hover:text-primary-600 transition">Next</a>
+                        }
+                        else
+                        {
+                            <span class="h-9 px-4 inline-flex items-center rounded-full border border-border text-sm font-semibold text-neutral-300 cursor-not-allowed">Next</span>
+                        }
+                    </div>
+                    <p class="text-xs text-neutral-400">Showing @first&ndash;@last of @Model.TotalCount products</p>
+                </nav>
+            }
         }
         else
         {
