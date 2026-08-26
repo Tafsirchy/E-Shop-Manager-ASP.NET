@@ -151,6 +151,17 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* ---------- Cart quantity stepper (hide native number spinners) ---------- */
+.qty-stepper input[type="number"]::-webkit-inner-spin-button,
+.qty-stepper input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.qty-stepper input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 /* ---------- Cross-document view transitions (progressive enhancement) ---------- */
 @media (prefers-reduced-motion: no-preference) {
   @view-transition {
