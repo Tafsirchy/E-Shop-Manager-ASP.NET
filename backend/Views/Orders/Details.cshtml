@@ -4,173 +4,266 @@
     var order = Model.Order;
     var statusColors = new Dictionary<string, string>
     {
-        ["Pending"]    = "bg-warning-500/15 text-warning-500",
-        ["Processing"] = "bg-primary-600/10 text-primary-700",
-        ["Shipped"]    = "bg-info-500/15 text-info-600",
-        ["Delivered"]  = "bg-success-500/15 text-success-600",
-        ["Cancelled"]  = "bg-danger-500/15 text-danger-600"
+        ["Pending"]    = "bg-warning-500/15 text-warning-500 border border-warning-500/30",
+        ["Processing"] = "bg-primary-600/10 text-primary-700 border border-primary-600/30",
+        ["Shipped"]    = "bg-info-500/15 text-info-600 border border-info-500/30",
+        ["Delivered"]  = "bg-success-500/15 text-success-600 border border-success-500/30",
+        ["Cancelled"]  = "bg-danger-500/15 text-danger-600 border border-danger-500/30"
+    };
+    var statusIcons = new Dictionary<string, string>
+    {
+        ["Pending"]   = "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
+        ["Processing"]= "M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15",
+        ["Shipped"]   = "M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4",
+        ["Delivered"] = "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
+        ["Cancelled"] = "M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
     };
     var steps = new[] { "Pending", "Processing", "Shipped", "Delivered" };
     var stepIcons = new Dictionary<string, string>
     {
         ["Pending"]   = "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4",
         ["Processing"]= "M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15",
-        ["Shipped"]   = "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4",
-        ["Delivered"] = "M5 13l4 4L19 7"
+        ["Shipped"]   = "M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4",
+        ["Delivered"] = "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
     };
     var stepIndex = Array.IndexOf(steps, order.Status);
     var isCancelled = order.Status == "Cancelled";
+
+    Func<string, string> shrinkId = id => id.Length > 8 ? id[..8] : id;
 }
-<main class="min-h-screen p-8 bg-background">
-    <div class="max-w-3xl mx-auto">
+<main class="min-h-screen p-4 sm:p-8 bg-background">
+    <div class="max-w-5xl mx-auto">
         <nav class="text-sm text-neutral-500 mb-6">
-            <a asp-controller="Orders" asp-action="Index" class="hover:text-primary-600">&larr; Back to Orders</a>
+            <a asp-controller="Orders" asp-action="Index" class="hover:text-primary-600 transition">&larr; Back to Orders</a>
         </nav>
 
-        <div class="rounded-2xl border border-border bg-card p-8 shadow-sm mb-6">
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-6 pb-6 border-b border-border">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl @(statusColors.GetValueOrDefault(order.Status, "bg-neutral-100 text-neutral-600")) flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="@statusIcons.GetValueOrDefault(order.Status, "")"></path>
+                    </svg>
+                </div>
                 <div>
-                    <h1 class="text-xl font-bold text-foreground font-mono">#@order.Id</h1>
-                    <p class="text-sm text-neutral-500 mt-1">Placed @order.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</p>
+                    <h1 class="text-2xl font-bold text-foreground">Order Details</h1>
+                    <p class="text-sm text-neutral-500 mt-0.5">
+                        <span class="font-mono text-neutral-400">#@shrinkId(order.Id)</span>
+                        <span class="mx-1.5">&middot;</span>
+                        @order.CreatedAt.ToLocalTime().ToString("MMM d, yyyy 'at' h:mm tt")
+                    </p>
                 </div>
-                <span class="rounded-full px-4 py-1.5 text-sm font-semibold @(statusColors.GetValueOrDefault(order.Status, "bg-neutral-100 text-neutral-600"))">@order.Status</span>
             </div>
-
-            @if (!string.IsNullOrWhiteSpace(order.TrackingNumber))
-            {
-                <div class="mb-6 p-4 rounded-xl bg-primary-600/5 border border-primary-600/20 flex items-center justify-between gap-4">
-                    <div>
-                        <p class="text-xs font-semibold text-primary-700 uppercase tracking-wide mb-1">Tracking Number</p>
-                        <p class="font-mono text-sm text-foreground tracking-wide" id="tracking-code">@order.TrackingNumber</p>
-                    </div>
-                    <button type="button" onclick="copyTracking()" class="shrink-0 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-700 transition" id="copy-btn">Copy</button>
-                </div>
-            }
-
-            <div class="space-y-4 mb-6">
-                @foreach (var item in order.Items)
-                {
-                    <div class="flex items-center justify-between gap-4">
-                        <div>
-                            <a asp-controller="Products" asp-action="Details" asp-route-id="@item.ProductId" class="font-semibold text-foreground hover:text-primary-600">@(item.ProductName ?? item.ProductId)</a>
-                            <p class="text-sm text-neutral-500">&#2547;@item.UnitPriceSnapshot.ToString("0.##") &times; @item.Quantity</p>
-                        </div>
-                        <span class="font-semibold text-foreground">&#2547;@((item.UnitPriceSnapshot * item.Quantity).ToString("0.##"))</span>
-                    </div>
-                }
-            </div>
-
-            <div class="border-t border-border pt-4 space-y-2 text-right">
-                @if (order.CategoryDiscountApplied > 0)
-                {
-                    <p class="text-sm text-success-600">Category discounts: -&#2547;@order.CategoryDiscountApplied.ToString("0.##")</p>
-                }
-                @if (order.DiscountApplied > 0)
-                {
-                    <p class="text-sm text-success-600">@Model.Order switch { PremiumOrder => "Premium", BulkOrder => "Bulk", _ => "Order-type" } discount: -&#2547;@order.DiscountApplied.ToString("0.##")</p>
-                }
-                <p class="text-lg font-bold text-foreground">Total: &#2547;@order.TotalAmount.ToString("0.##")</p>
-            </div>
+            <span class="rounded-full px-4 py-2 text-sm font-semibold @(statusColors.GetValueOrDefault(order.Status, "bg-neutral-100 text-neutral-600"))">@order.Status</span>
         </div>
 
-        <div class="rounded-2xl border border-border bg-card p-8 shadow-sm mb-6">
-            <h2 class="text-sm font-bold text-foreground uppercase tracking-wide mb-8">Track Your Order</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6">
+            <div class="space-y-6">
+                <div class="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm">
+                    <h2 class="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-6">Order Progress</h2>
 
-            <div class="flex items-start justify-between relative px-2 mb-6">
-                <div class="absolute top-5 left-0 right-0 h-0.5 bg-border"></div>
-                <div class="absolute top-5 left-0 h-0.5 bg-primary-500 transition-all duration-500"
-                     style="width: @(isCancelled ? "0%" : stepIndex <= 0 ? "0%" : stepIndex >= 3 ? "100%" : $"{stepIndex * 33.33}%")"></div>
-
-                @foreach (var step in steps)
-                {
-                    var idx = Array.IndexOf(steps, step);
-                    var reached = !isCancelled && idx <= stepIndex;
-                    var isCurrent = !isCancelled && idx == stepIndex;
-                    <div class="flex flex-col items-center z-10 w-0 flex-1">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300
-                                    @(reached ? "bg-primary-500 text-white" : "bg-background border-2 border-border text-neutral-400")
-                                    @(isCurrent ? "ring-4 ring-primary-500/20 scale-110" : "")">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                                <path d="@stepIcons[step]"></path>
-                            </svg>
-                        </div>
-                        <span class="mt-3 text-xs font-semibold text-center @(reached ? "text-foreground" : "text-neutral-400")">@step</span>
-                        @if (reached)
-                        {
-                            var entry = Model.History.LastOrDefault(h => h.Status == step);
-                            if (entry != null)
+                    @if (isCancelled)
+                    {
+                        <div class="flex flex-col items-center py-6 text-center">
+                            <div class="w-16 h-16 rounded-full bg-danger-500/10 flex items-center justify-center mb-4">
+                                <svg class="w-8 h-8 text-danger-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                                </svg>
+                            </div>
+                            <p class="text-lg font-bold text-danger-600">Order Cancelled</p>
+                            @if (Model.History.Count > 0)
                             {
-                                <span class="mt-1 text-[10px] text-neutral-400 text-center whitespace-nowrap">@entry.CreatedAt.ToLocalTime().ToString("MMM d, h:mm tt")</span>
+                                var cancelEntry = Model.History.LastOrDefault(h => h.Status == "Cancelled");
+                                if (cancelEntry != null)
+                                {
+                                    <p class="text-sm text-neutral-400 mt-1">@cancelEntry.CreatedAt.ToLocalTime().ToString("MMM d, yyyy 'at' h:mm tt")</p>
+                                }
+                                var lastNote = Model.History.Last();
+                                if (!string.IsNullOrWhiteSpace(lastNote.Note))
+                                {
+                                    <p class="text-sm text-neutral-500 mt-2 italic">"@lastNote.Note"</p>
+                                }
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="flex items-start justify-between relative px-1 mb-2">
+                            <div class="absolute top-5 left-[calc(12.5%+8px)] right-[calc(12.5%+8px)] h-0.5 bg-border"></div>
+                            <div class="absolute top-5 left-[calc(12.5%+8px)] h-0.5 bg-primary-500 transition-all duration-700 ease-out"
+                                 style="width: @(stepIndex <= 0 ? "0%" : stepIndex >= 3 ? "calc(75% - 16px)" : $"{stepIndex * 25}%")"></div>
+
+                            @foreach (var step in steps)
+                            {
+                                var idx = Array.IndexOf(steps, step);
+                                var reached = idx <= stepIndex;
+                                var isCurrent = idx == stepIndex;
+                                <div class="flex flex-col items-center z-10 w-0 flex-1">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500
+                                                @(reached ? "bg-primary-500 text-white shadow-lg shadow-primary-500/25" : "bg-card border-2 border-border text-neutral-300")
+                                                @(isCurrent ? "ring-4 ring-primary-500/20 scale-110" : "")">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                            <path d="@stepIcons[step]"></path>
+                                        </svg>
+                                    </div>
+                                    <span class="mt-3 text-xs font-semibold text-center @(reached ? "text-foreground" : "text-neutral-400")">@step</span>
+                                    @if (reached)
+                                    {
+                                        var entry = Model.History.LastOrDefault(h => h.Status == step);
+                                        if (entry != null)
+                                        {
+                                            <span class="mt-1 text-[10px] text-neutral-400 text-center whitespace-nowrap">@entry.CreatedAt.ToLocalTime().ToString("MMM d, h:mm tt")</span>
+                                        }
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        @if (Model.History.Count > 0)
+                        {
+                            var latest = Model.History.Last();
+                            if (!string.IsNullOrWhiteSpace(latest.Note))
+                            {
+                                <p class="mt-6 text-sm text-neutral-500 text-center italic">"@latest.Note"</p>
                             }
                         }
-                    </div>
-                }
-            </div>
-
-            @if (isCancelled)
-            {
-                <div class="flex items-center justify-center gap-2 p-3 rounded-xl bg-danger-500/10 text-danger-600 text-sm font-semibold">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    Order was cancelled
+                    }
                 </div>
-            }
 
-            @if (Model.History.Count > 0)
-            {
-                var latest = Model.History.Last();
-                if (!string.IsNullOrWhiteSpace(latest.Note))
+                <div class="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+                    <div class="px-6 sm:px-8 pt-6 sm:pt-8 pb-4">
+                        <h2 class="text-xs font-bold text-neutral-400 uppercase tracking-widest">Items Ordered</h2>
+                    </div>
+                    <div class="divide-y divide-border">
+                        @foreach (var item in order.Items)
+                        {
+                            <div class="px-6 sm:px-8 py-4 flex items-center justify-between gap-4">
+                                <div class="min-w-0">
+                                    <a asp-controller="Products" asp-action="Details" asp-route-id="@item.ProductId" class="font-semibold text-foreground hover:text-primary-600 transition text-sm sm:text-base truncate block">@(item.ProductName ?? item.ProductId)</a>
+                                    <p class="text-xs sm:text-sm text-neutral-400 mt-0.5">&#2547;@item.UnitPriceSnapshot.ToString("0.##") &times; @item.Quantity</p>
+                                </div>
+                                <span class="font-semibold text-foreground text-sm sm:text-base whitespace-nowrap">&#2547;@((item.UnitPriceSnapshot * item.Quantity).ToString("0.##"))</span>
+                            </div>
+                        }
+                    </div>
+                    <div class="bg-neutral-50/50 border-t border-border px-6 sm:px-8 py-4 space-y-1.5">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-neutral-500">Subtotal</span>
+                            <span class="text-foreground">&#2547;@order.Subtotal.ToString("0.##")</span>
+                        </div>
+                        @if (order.CategoryDiscountApplied > 0)
+                        {
+                            <div class="flex justify-between text-sm">
+                                <span class="text-success-600">Category discounts</span>
+                                <span class="text-success-600">-&#2547;@order.CategoryDiscountApplied.ToString("0.##")</span>
+                            </div>
+                        }
+                        @if (order.DiscountApplied > 0)
+                        {
+                            <div class="flex justify-between text-sm">
+                                <span class="text-success-600">@Model.Order switch { PremiumOrder => "Premium", BulkOrder => "Bulk", _ => "Order-type" } discount</span>
+                                <span class="text-success-600">-&#2547;@order.DiscountApplied.ToString("0.##")</span>
+                            </div>
+                        }
+                        <div class="flex justify-between text-base font-bold pt-2 border-t border-border mt-2">
+                            <span class="text-foreground">Total</span>
+                            <span class="text-foreground">&#2547;@order.TotalAmount.ToString("0.##")</span>
+                        </div>
+                    </div>
+                </div>
+
+                @if (Model.IsAdmin)
                 {
-                    <p class="mt-4 text-sm text-neutral-500 text-center">"@latest.Note"</p>
+                    <div class="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm">
+                        <h2 class="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-5">Admin Actions</h2>
+                        <form asp-controller="Orders" asp-action="UpdateStatus" method="post" class="space-y-4">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="Id" value="@order.Id" />
+
+                            <div>
+                                <label for="Status" class="block text-sm font-medium text-foreground mb-1.5">Status</label>
+                                <select name="Status" id="Status"
+                                        class="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
+                                    @foreach (var s in new[] { "Pending", "Processing", "Shipped", "Delivered", "Cancelled" })
+                                    {
+                                        <option value="@s" selected="@(s == order.Status)">@s</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="TrackingNumber" class="block text-sm font-medium text-foreground mb-1.5">Tracking Number <span class="text-neutral-400 font-normal">(optional)</span></label>
+                                <input type="text" name="TrackingNumber" id="TrackingNumber" value="@order.TrackingNumber"
+                                       placeholder="e.g. BD-TRK-1234567"
+                                       class="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-neutral-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition" />
+                            </div>
+
+                            <div>
+                                <label for="Note" class="block text-sm font-medium text-foreground mb-1.5">Note <span class="text-neutral-400 font-normal">(optional)</span></label>
+                                <textarea name="Note" id="Note" rows="2"
+                                          placeholder="Internal note for this status change..."
+                                          class="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-neutral-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none transition"></textarea>
+                            </div>
+
+                            <button type="submit"
+                                    class="w-full rounded-full bg-primary-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 active:scale-[0.98] transition">
+                                Update Order
+                            </button>
+                        </form>
+                    </div>
                 }
-            }
-        </div>
-
-        @if (Model.IsAdmin)
-        {
-            <div class="rounded-2xl border border-border bg-card p-8 shadow-sm mb-6">
-                <h2 class="text-sm font-bold text-foreground uppercase tracking-wide mb-4">Admin Actions</h2>
-                <form asp-controller="Orders" asp-action="UpdateStatus" method="post" class="space-y-4">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="Id" value="@order.Id" />
-
-                    <div>
-                        <label for="Status" class="block text-sm font-medium text-foreground mb-1">Update Status</label>
-                        <select name="Status" id="Status"
-                                class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                            @foreach (var s in new[] { "Pending", "Processing", "Shipped", "Delivered", "Cancelled" })
-                            {
-                                <option value="@s" selected="@(s == order.Status)">@s</option>
-                            }
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="TrackingNumber" class="block text-sm font-medium text-foreground mb-1">Tracking Number <span class="text-neutral-400 font-normal">(optional)</span></label>
-                        <input type="text" name="TrackingNumber" id="TrackingNumber" value="@order.TrackingNumber"
-                               placeholder="e.g. BD-TRK-1234567"
-                               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-neutral-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-                    </div>
-
-                    <div>
-                        <label for="Note" class="block text-sm font-medium text-foreground mb-1">Note <span class="text-neutral-400 font-normal">(optional)</span></label>
-                        <textarea name="Note" id="Note" rows="2"
-                                  placeholder="Internal note for this status change..."
-                                  class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-neutral-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"></textarea>
-                    </div>
-
-                    <button type="submit"
-                            class="rounded-full bg-primary-600 px-6 py-2 text-sm font-semibold text-white hover:bg-primary-700 transition">
-                        Update Order
-                    </button>
-                </form>
             </div>
-        }
 
-        <div class="flex justify-end print:hidden">
-            <a asp-controller="Orders" asp-action="Invoice" asp-route-id="@order.Id"
-               class="inline-block rounded-full bg-primary-600 px-6 py-2 font-semibold text-white hover:bg-primary-700 transition">
-                View Invoice
-            </a>
+            <div class="space-y-6">
+                <div class="rounded-2xl border border-border bg-card shadow-sm sticky top-24">
+                    @if (!string.IsNullOrWhiteSpace(order.TrackingNumber))
+                    {
+                        <div class="p-6 pb-0">
+                            <div class="p-4 rounded-xl bg-primary-600/5 border border-primary-600/20">
+                                <p class="text-[10px] font-bold text-primary-600 uppercase tracking-widest mb-1.5">Tracking Number</p>
+                                <div class="flex items-center justify-between gap-3">
+                                    <p class="font-mono text-sm text-foreground tracking-wide" id="tracking-code">@order.TrackingNumber</p>
+                                    <button type="button" onclick="copyTracking()" class="shrink-0 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-700 transition" id="copy-btn">Copy</button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="p-6 sm:p-8">
+                        <h2 class="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-4">Summary</h2>
+
+                        <div class="space-y-3 mb-6">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-neutral-500">Order ID</span>
+                                <span class="font-mono text-xs text-foreground">#@shrinkId(order.Id)</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-neutral-500">Placed</span>
+                                <span class="text-foreground">@order.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-neutral-500">Items</span>
+                                <span class="text-foreground">@order.Items.Count</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-neutral-500">Status</span>
+                                <span class="font-semibold @(statusColors.GetValueOrDefault(order.Status, "")) rounded-full px-2.5 py-0.5 text-xs">@order.Status</span>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-border pt-4 mb-6">
+                            <div class="flex justify-between text-lg font-bold">
+                                <span class="text-foreground">Total</span>
+                                <span class="text-foreground">&#2547;@order.TotalAmount.ToString("0.##")</span>
+                            </div>
+                        </div>
+
+                        <a asp-controller="Orders" asp-action="Invoice" asp-route-id="@order.Id"
+                           class="block w-full text-center rounded-full border-2 border-foreground bg-foreground px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 hover:border-primary-700 active:scale-[0.98] transition">
+                            View Invoice
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </main>
