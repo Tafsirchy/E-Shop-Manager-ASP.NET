@@ -21,6 +21,8 @@ namespace EShopManager.API.ViewModels
     public class OrderDetailsViewModel
     {
         public Order Order { get; set; } = null!;
+        public List<OrderStatusHistory> History { get; set; } = new();
+        public bool IsAdmin { get; set; }
     }
 
     public class InvoiceLine
