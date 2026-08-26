@@ -175,7 +175,7 @@ namespace EShopManager.API.Controllers
             var owner = _me.Email;
             
             // Mark order as paid/processing
-            await _orderService.UpdateOrderStatusAsync(orderId, "Processing");
+            await _orderService.UpdateOrderStatusAsync(orderId, "Processing", "Payment received via Stripe");
             
             // Clear the cart only upon successful payment
             await _cartService.ClearCartAsync(owner);
@@ -189,7 +189,7 @@ namespace EShopManager.API.Controllers
         public async Task<IActionResult> PaymentCancel(string orderId)
         {
             // Optionally, mark the order as cancelled or leave it pending
-            await _orderService.UpdateOrderStatusAsync(orderId, "Cancelled");
+            await _orderService.UpdateOrderStatusAsync(orderId, "Cancelled", "Payment cancelled by user");
             
             TempData["StatusMessage"] = "Payment was cancelled. Order has been marked as Cancelled.";
             TempData["StatusIsError"] = true;
