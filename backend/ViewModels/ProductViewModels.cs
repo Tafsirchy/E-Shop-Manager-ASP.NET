@@ -8,6 +8,10 @@ namespace EShopManager.API.ViewModels
         public string? Search { get; set; }
         public string? Category { get; set; }
         public string? Sort { get; set; }
+        public int Page { get; set; } = 1;
+        public int TotalPages { get; set; } = 1;
+        public int TotalCount { get; set; }
+        public int PageSize { get; set; } = 12;
     }
 
     public class ProductDetailsViewModel
