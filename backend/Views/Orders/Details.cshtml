@@ -205,7 +205,7 @@
                             </div>
 
                             <button type="submit"
-                                    class="w-full rounded-full bg-primary-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 active:scale-[0.98] transition">
+                                    class="w-full rounded-full bg-foreground px-6 py-2.5 text-sm font-semibold text-white hover:opacity-80 active:scale-[0.98] transition">
                                 Update Order
                             </button>
                         </form>
@@ -222,7 +222,7 @@
                                 <p class="text-[10px] font-bold text-primary-600 uppercase tracking-widest mb-1.5">Tracking Number</p>
                                 <div class="flex items-center justify-between gap-3">
                                     <p class="font-mono text-sm text-foreground tracking-wide" id="tracking-code">@order.TrackingNumber</p>
-                                    <button type="button" onclick="copyTracking()" class="shrink-0 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-700 transition" id="copy-btn">Copy</button>
+                                    <button type="button" onclick="copyTracking()" class="shrink-0 rounded-lg bg-foreground px-3 py-1.5 text-xs font-semibold text-white hover:opacity-80 transition" id="copy-btn">Copy</button>
                                 </div>
                             </div>
                         </div>
@@ -258,7 +258,7 @@
                         </div>
 
                         <a asp-controller="Orders" asp-action="Invoice" asp-route-id="@order.Id"
-                           class="block w-full text-center rounded-full bg-primary-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 active:scale-[0.98] transition">
+                           class="block w-full text-center rounded-full bg-foreground px-6 py-2.5 text-sm font-semibold text-white hover:opacity-80 active:scale-[0.98] transition">
                             View Invoice
                         </a>
                     </div>
