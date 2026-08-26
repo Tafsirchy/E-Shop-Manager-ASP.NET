@@ -22,8 +22,9 @@ namespace EShopManager.API.Controllers
             _env = env;
         }
 
-        public async Task<IActionResult> Index(string? search, string? category, string? sort)
+        public async Task<IActionResult> Index(string? search, string? category, string? sort, int page = 1)
         {
+            const int PageSize = 12;
             var products = await _productService.GetAsync(search, category);
             products = sort switch
             {
@@ -35,12 +36,21 @@ namespace EShopManager.API.Controllers
                 _ => products
             };
 
+            var totalCount = products.Count;
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)PageSize));
+            page = Math.Clamp(page, 1, totalPages);
+            var pagedProducts = products.Skip((page - 1) * PageSize).Take(PageSize).ToList();
+
             return View(new ProductListViewModel
             {
-                Products = products,
+                Products = pagedProducts,
                 Search = search,
                 Category = category,
-                Sort = sort
+                Sort = sort,
+                Page = page,
+                TotalPages = totalPages,
+                TotalCount = totalCount,
+                PageSize = PageSize
             });
         }
 
