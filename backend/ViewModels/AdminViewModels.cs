@@ -55,5 +55,7 @@ namespace EShopManager.API.ViewModels
     {
         public string Id { get; set; } = null!;
         public string Status { get; set; } = null!;
+        public string? TrackingNumber { get; set; }
+        public string? Note { get; set; }
     }
 }
