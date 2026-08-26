@@ -6,12 +6,14 @@ namespace EShopManager.API.Services
     public class OrderService
     {
         private readonly IMongoCollection<Order> _orderCollection;
+        private readonly IMongoCollection<OrderStatusHistory> _historyCollection;
         private readonly ProductService _productService;
         private readonly MembershipService _membershipService;
 
         public OrderService(IMongoDatabase mongoDatabase, ProductService productService, MembershipService membershipService)
         {
             _orderCollection = mongoDatabase.GetCollection<Order>("Orders");
+            _historyCollection = mongoDatabase.GetCollection<OrderStatusHistory>("OrderStatusHistory");
             _productService = productService;
             _membershipService = membershipService;
         }
@@ -54,6 +56,14 @@ namespace EShopManager.API.Services
 
             await _orderCollection.InsertOneAsync(order);
 
+            await _historyCollection.InsertOneAsync(new OrderStatusHistory
+            {
+                OrderId = order.Id!,
+                Status = "Pending",
+                Note = "Order placed",
+                CreatedAt = order.CreatedAt
+            });
+
             // Atomically decrement inventory. If any item cannot be fulfilled,
             // roll back all decrements already applied and remove the order.
             var decremented = new List<(string ProductId, int Quantity)>();
@@ -95,10 +105,30 @@ namespace EShopManager.API.Services
             return order;
         }
 
-        public async Task UpdateOrderStatusAsync(string id, string status)
+        public async Task UpdateOrderStatusAsync(string id, string status, string? note = null)
         {
             var update = Builders<Order>.Update.Set(x => x.Status, status);
             await _orderCollection.UpdateOneAsync(x => x.Id == id, update);
+
+            await _historyCollection.InsertOneAsync(new OrderStatusHistory
+            {
+                OrderId = id,
+                Status = status,
+                Note = note,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        public async Task<List<OrderStatusHistory>> GetHistoryAsync(string orderId) =>
+            await _historyCollection
+                .Find(x => x.OrderId == orderId)
+                .SortBy(x => x.CreatedAt)
+                .ToListAsync();
+
+        public async Task SetTrackingNumberAsync(string orderId, string trackingNumber)
+        {
+            var update = Builders<Order>.Update.Set(x => x.TrackingNumber, trackingNumber);
+            await _orderCollection.UpdateOneAsync(x => x.Id == orderId, update);
         }
     }
 }
