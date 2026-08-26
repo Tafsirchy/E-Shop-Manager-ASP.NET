@@ -17,6 +17,7 @@ namespace EShopManager.API.Models
         public decimal TotalAmount { get; set; }
         public decimal DiscountApplied { get; set; }
         public string Status { get; set; } = "Pending"; // Pending, Processing, Delivered, Cancelled
+        public string? TrackingNumber { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public abstract void ApplyDiscount();
