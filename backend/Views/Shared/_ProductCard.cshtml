@@ -3,20 +3,48 @@
     var returnUrl = Context.Request.Path + Context.Request.QueryString;
     var inWishlist = ViewBag.InWishlist as bool? ?? false;
     var cardSrcset = ImageUrls.Srcset(Model.ImageUrl);
+    var gallery = new List<string>();
+    if (!string.IsNullOrEmpty(Model.ImageUrl)) gallery.Add(Model.ImageUrl);
+    gallery.AddRange(Model.GalleryImages.Where(g => !string.IsNullOrEmpty(g)));
+    var colorVariants = Model.Variants?
+        .Where(v => !string.IsNullOrEmpty(v.Value))
+        .ToList() ?? new List<ProductVariant>();
 }
-<div class="group relative bg-card rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-border flex flex-col overflow-hidden">
-    <div class="img-shimmer h-48 bg-gradient-to-br from-neutral-100 to-neutral-200 rounded-xl mb-4 flex items-center justify-center overflow-hidden relative">
-        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+<div class="group relative bg-card rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-border flex flex-col overflow-hidden">
+
+    <div class="relative aspect-[5/4] bg-gradient-to-br from-neutral-100 to-neutral-200 overflow-hidden img-shimmer border-b border-border">
+        @if (gallery.Count > 0)
         {
-            <a asp-controller="Products" asp-action="Details" asp-route-id="@Model.Id" class="absolute inset-0">
-                <img src="@ImageUrls.Sized(Model.ImageUrl, 400)" alt="@Model.Name" width="400" height="300" loading="lazy" decoding="async" @(string.IsNullOrEmpty(cardSrcset) ? null : Html.Raw($"srcset=\"{cardSrcset}\" sizes=\"(max-width: 639px) 100vw, (max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw\"")) class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+            <a asp-controller="Products" asp-action="Details" asp-route-id="@Model.Id"
+               class="absolute inset-0 flex items-center justify-center p-4">
+                <img src="@ImageUrls.Sized(gallery[0], 480)" alt="@Model.Name" width="480" height="600" loading="lazy" decoding="async"
+                     @(string.IsNullOrEmpty(cardSrcset) ? null : Html.Raw($"srcset=\"{cardSrcset}\" sizes=\"(max-width: 639px) 100vw, (max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw\""))
+                     class="max-h-full max-w-full object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-105" />
             </a>
         }
         else
         {
-            <span class="text-neutral-400">No Image</span>
+            <span class="absolute inset-0 flex items-center justify-center text-sm text-neutral-400">No Image</span>
         }
-        <div class="absolute top-2 right-2 z-20">
+
+        @if (Model.Stock <= 10)
+        {
+            <span class="absolute top-3 left-3 z-20 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide @(Model.Stock > 0 ? "bg-warning-500/90 text-white" : "bg-danger-500/95 text-white")">
+                @(Model.Stock > 0 ? $"Only {Model.Stock} left" : "Out of stock")
+            </span>
+        }
+
+        @if (gallery.Count > 1)
+        {
+            <div data-carousel-dots class="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5" aria-hidden="true">
+                @for (int i = 0; i < Math.Min(gallery.Count, 5); i++)
+                {
+                    <span class="h-1.5 rounded-full transition-all duration-200 @(i == 0 ? "w-4 bg-neutral-900/70" : "w-1.5 bg-neutral-900/25")"></span>
+                }
+            </div>
+        }
+
+        <div class="absolute top-3 right-3 z-20">
             <form asp-controller="Wishlist" asp-action="Toggle" method="post">
                 <input type="hidden" name="ProductId" value="@Model.Id" />
                 <input type="hidden" name="ReturnUrl" value="@returnUrl" />
@@ -28,25 +56,40 @@
         </div>
     </div>
 
-    <div class="flex items-start justify-between gap-3 mb-3">
-        <div class="min-w-0">
-            <a asp-controller="Products" asp-action="Details" asp-route-id="@Model.Id" class="text-lg font-semibold text-foreground line-clamp-1 hover:text-primary-600">@Model.Name</a>
-            <p class="text-sm text-neutral-500">@Model.Category</p>
-        </div>
-        <span class="text-lg font-bold text-foreground whitespace-nowrap">&#2547;@(Model.Price.ToString("0.##"))</span>
-    </div>
+    <div class="flex flex-col flex-1 px-4 py-3.5">
+        <p class="text-[11px] font-semibold uppercase tracking-widest text-neutral-400">@Model.Category</p>
+        <a asp-controller="Products" asp-action="Details" asp-route-id="@Model.Id"
+           class="mt-0.5 text-lg font-bold text-foreground line-clamp-1 hover:text-primary-600 transition">@Model.Name</a>
 
-    <div class="mt-auto flex items-center justify-between gap-3">
-        <span class="text-sm font-medium px-2.5 py-1 rounded-full @(Model.Stock > 10 ? "bg-success-600/20 text-success-600" : Model.Stock > 0 ? "bg-warning-500/20 text-warning-500" : "bg-danger-500/20 text-danger-500")">
-            @(Model.Stock > 0 ? $"{Model.Stock} in stock" : "Out of stock")
-        </span>
-        <form asp-controller="Cart" asp-action="Add" method="post">
-            <input type="hidden" name="ProductId" value="@Model.Id" />
-            <input type="hidden" name="Quantity" value="1" />
-            <input type="hidden" name="ReturnUrl" value="@returnUrl" />
-            <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-accent-500 px-4 py-2 text-sm font-bold text-white transition-all duration-200 hover:bg-accent-600 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100" @(Model.Stock <= 0 ? Html.Raw("disabled") : null)>
-                Add to Cart
-            </button>
-        </form>
+        @if (!string.IsNullOrWhiteSpace(Model.ShortDescription))
+        {
+            <p class="mt-1 text-sm leading-5 text-neutral-500 line-clamp-2">@Model.ShortDescription</p>
+        }
+
+        @if (colorVariants.Count > 0)
+        {
+            <div class="mt-2 flex items-center gap-2" role="group" aria-label="Available options">
+                @foreach (var variant in colorVariants.Take(6))
+                {
+                    <button type="button" title="@variant.Name" aria-label="@variant.Name"
+                            class="h-5 w-5 rounded-full border border-border shadow-inner transition hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1"
+                            style="background-color: @variant.Value"></button>
+                }
+            </div>
+        }
+
+        <div class="mt-auto pt-3 flex items-center justify-between gap-3">
+            <span class="text-xl font-bold text-primary-700 whitespace-nowrap">&#2547;@(Model.Price.ToString("0.##"))</span>
+            <form asp-controller="Cart" asp-action="Add" method="post">
+                <input type="hidden" name="ProductId" value="@Model.Id" />
+                <input type="hidden" name="Quantity" value="1" />
+                <input type="hidden" name="ReturnUrl" value="@returnUrl" />
+                <button type="submit"
+                        class="inline-flex items-center rounded-full border border-border px-4 py-2 text-xs font-bold uppercase tracking-wide text-foreground hover:border-primary-600 hover:bg-primary-50 hover:text-primary-600 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-border disabled:hover:bg-transparent disabled:hover:text-foreground"
+                        @(Model.Stock <= 0 ? Html.Raw("disabled") : null)>
+                    Add to Cart
+                </button>
+            </form>
+        </div>
     </div>
 </div>
