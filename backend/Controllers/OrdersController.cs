@@ -45,7 +45,14 @@ namespace EShopManager.API.Controllers
             if (!CanAccess(order))
                 return NotFound();
 
-            return View(new OrderDetailsViewModel { Order = order! });
+            var history = await _orderService.GetHistoryAsync(id);
+
+            return View(new OrderDetailsViewModel
+            {
+                Order = order!,
+                History = history,
+                IsAdmin = string.Equals(_me.Role, UserRole.Admin.ToString())
+            });
         }
 
         public async Task<IActionResult> Invoice(string id)
@@ -94,9 +101,13 @@ namespace EShopManager.API.Controllers
             var order = await _orderService.GetOrderAsync(input.Id);
             if (order == null) return NotFound();
 
-            await _orderService.UpdateOrderStatusAsync(input.Id, input.Status);
+            await _orderService.UpdateOrderStatusAsync(input.Id, input.Status, input.Note);
+
+            if (!string.IsNullOrWhiteSpace(input.TrackingNumber))
+                await _orderService.SetTrackingNumberAsync(input.Id, input.TrackingNumber.Trim());
+
             TempData["Message"] = $"Order {input.Id[..8]}... updated to {input.Status}.";
-            return RedirectToAction("Index", "Admin");
+            return RedirectToAction("Details", "Orders", new { id = input.Id });
         }
     }
 }
