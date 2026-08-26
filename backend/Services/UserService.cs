@@ -30,9 +30,6 @@ namespace EShopManager.API.Services
             return await _usersCollection.Find(x => x.Email == normalized).FirstOrDefaultAsync();
         }
 
-        public async Task<User?> GetByIdAsync(string id) =>
-            await _usersCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
-
         public async Task<List<User>> GetAllAsync() =>
             await _usersCollection.Find(Builders<User>.Filter.Empty).ToListAsync();
 

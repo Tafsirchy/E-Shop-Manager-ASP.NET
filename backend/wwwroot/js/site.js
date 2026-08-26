@@ -358,5 +358,4 @@
         initCartPage();
     });
 
-    window.refreshCartBadge = refreshCartBadge;
 })();

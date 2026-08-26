@@ -34,16 +34,6 @@
             </span>
         }
 
-        @if (gallery.Count > 1)
-        {
-            <div data-carousel-dots class="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5" aria-hidden="true">
-                @for (int i = 0; i < Math.Min(gallery.Count, 5); i++)
-                {
-                    <span class="h-1.5 rounded-full transition-all duration-200 @(i == 0 ? "w-4 bg-neutral-900/70" : "w-1.5 bg-neutral-900/25")"></span>
-                }
-            </div>
-        }
-
         <div class="absolute top-3 right-3 z-20">
             <form asp-controller="Wishlist" asp-action="Toggle" method="post">
                 <input type="hidden" name="ProductId" value="@Model.Id" />

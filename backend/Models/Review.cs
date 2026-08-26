@@ -51,9 +51,4 @@ namespace EShopManager.API.Models
         public string? Comment { get; set; }
         public string? VideoUrl { get; set; }
     }
-
-    public class ReviewReplyRequest
-    {
-        public string Text { get; set; } = null!;
-    }
 }
