@@ -97,6 +97,55 @@
             .catch(function () { /* badge stays as-is */ });
     }
 
+    /* ---------- Search expand / collapse ---------- */
+
+    function initSearchToggle() {
+        var openBtn = document.getElementById('search-open');
+        var form = document.getElementById('search-form');
+        var input = document.getElementById('global-search');
+        var closeBtn = document.getElementById('search-close');
+        var navItems = document.getElementById('nav-items');
+        if (!openBtn || !form || !input || !closeBtn) return;
+
+        function expand() {
+            form.classList.remove('hidden');
+            form.classList.add('flex');
+            navItems.classList.add('hidden');
+            openBtn.classList.add('hidden');
+            closeBtn.classList.remove('hidden');
+            requestAnimationFrame(function () {
+                input.style.width = '16rem';
+                input.focus();
+            });
+        }
+
+        function collapse() {
+            input.style.width = '0';
+            closeBtn.classList.add('hidden');
+            navItems.classList.remove('hidden');
+            openBtn.classList.remove('hidden');
+            setTimeout(function () {
+                form.classList.add('hidden');
+                form.classList.remove('flex');
+            }, 300);
+        }
+
+        openBtn.addEventListener('click', expand);
+        closeBtn.addEventListener('click', collapse);
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && form.classList.contains('flex')) {
+                collapse();
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            if (form.classList.contains('flex') && !form.contains(e.target) && e.target !== openBtn && !openBtn.contains(e.target)) {
+                collapse();
+            }
+        });
+    }
+
     /* ---------- Header search suggestions ---------- */
 
     function initSearchSuggestions() {
@@ -303,6 +352,7 @@
         }
 
         refreshCartBadge();
+        initSearchToggle();
         initSearchSuggestions();
         initPrefetch();
         initCartPage();
