@@ -219,6 +219,77 @@
         }, { passive: true, capture: true });
     }
 
+    /* ---------- Cart page: quantity stepper, shipping preview, coupon hint ---------- */
+
+    function initCartPage() {
+        var totals = document.querySelector('[data-cart-totals]');
+        var SHIP_RATES = { free: 0, flat: 60, pickup: 0 };
+        var TAKA = '\u09F3';
+
+        function fmt(n) { return TAKA + (Math.round(n * 100) / 100); }
+
+        document.querySelectorAll('[data-qty-form]').forEach(function (form) {
+            var input = form.querySelector('input[name="Quantity"]');
+            if (!input) return;
+            form.querySelectorAll('[data-step]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var current = parseInt(input.value, 10) || 1;
+                    input.value = Math.max(1, current + parseInt(btn.dataset.step, 10));
+                    form.submit();
+                });
+            });
+            input.addEventListener('change', function () {
+                var v = parseInt(input.value, 10);
+                if (!v || v < 1) input.value = 1;
+                form.submit();
+            });
+        });
+
+        if (totals) {
+            var subtotal = parseFloat(totals.dataset.subtotal) || 0;
+            var label = totals.querySelector('[data-shipping-label]');
+            var totalEl = totals.querySelector('[data-total-value]');
+
+            totals.querySelectorAll('input[name="ShippingOption"]').forEach(function (radio) {
+                radio.addEventListener('change', function () {
+                    var rate = SHIP_RATES[radio.value] !== undefined ? SHIP_RATES[radio.value] : 0;
+                    if (label) {
+                        label.textContent = rate === 0 ? 'Free' : fmt(rate);
+                        label.classList.toggle('text-success-600', rate === 0);
+                    }
+                    if (totalEl) totalEl.textContent = fmt(subtotal + rate);
+                });
+            });
+
+            var toggle = totals.querySelector('[data-calc-toggle]');
+            var panel = totals.querySelector('[data-calc-panel]');
+            if (toggle && panel) {
+                toggle.addEventListener('click', function () {
+                    panel.classList.toggle('hidden');
+                    var open = !panel.classList.contains('hidden');
+                    toggle.textContent = open ? 'Hide shipping options' : 'Calculate shipping';
+                    if (open) {
+                        var field = panel.querySelector('input');
+                        if (field) field.focus();
+                    }
+                });
+            }
+        }
+
+        var couponForm = document.querySelector('[data-coupon-form]');
+        if (couponForm) {
+            couponForm.addEventListener('submit', function (e) { e.preventDefault(); });
+            var applyBtn = couponForm.querySelector('button');
+            var hint = document.querySelector('[data-coupon-hint]');
+            if (applyBtn && hint) {
+                applyBtn.addEventListener('click', function () { hint.classList.remove('hidden'); });
+            }
+        }
+
+        var updateBtn = document.querySelector('[data-update-cart]');
+        if (updateBtn) updateBtn.addEventListener('click', function () { location.reload(); });
+    }
+
     /* ---------- Boot ---------- */
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -234,6 +305,7 @@
         refreshCartBadge();
         initSearchSuggestions();
         initPrefetch();
+        initCartPage();
     });
 
     window.refreshCartBadge = refreshCartBadge;
