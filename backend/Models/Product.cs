@@ -22,10 +22,13 @@ namespace EShopManager.API.Models
         public string StockStatus { get; set; } = "In Stock";
         public string? ImageUrl { get; set; }
         public List<string> GalleryImages { get; set; } = new();
+        public string? VideoUrl { get; set; }
         public string? Badge { get; set; }
+        public string? PriceUnit { get; set; }
         public string? Warranty { get; set; }
         public string? DeliveryEstimate { get; set; }
         public string? ReturnPolicy { get; set; }
+        public string? SeoTitle { get; set; }
         public string? SeoDescription { get; set; }
         public string? CanonicalUrl { get; set; }
         public decimal AverageRating { get; set; }
