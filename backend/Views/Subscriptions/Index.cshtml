@@ -58,7 +58,7 @@
                     </ul>
                     @if (!Me.IsAuthenticated)
                     {
-                        <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="/Subscriptions" class="block rounded-full border border-border px-5 py-2.5 text-center font-semibold hover:border-neutral-400 transition">Sign in to subscribe</a>
+                        <button type="button" data-auth-toggle="signin" data-return-url="/Subscriptions" class="block w-full rounded-full border border-border px-5 py-2.5 text-center font-semibold hover:border-neutral-400 transition cursor-pointer">Sign in to subscribe</button>
                     }
                     else if (row.IsSubscribed)
                     {
