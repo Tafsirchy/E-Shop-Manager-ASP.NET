@@ -20,6 +20,14 @@ namespace EShopManager.API.Controllers
 
         private bool IsGuest => !_me.IsAuthenticated;
 
+        [HttpGet]
+        public async Task<IActionResult> Count()
+        {
+            var owner = _me.OwnerKey;
+            var wl = IsGuest ? await _wishlistService.GetByGuestAsync(owner) : await _wishlistService.GetByUserAsync(owner);
+            return Json(new { count = wl?.Items.Count ?? 0 });
+        }
+
         public async Task<IActionResult> Index()
         {
             var owner = _me.OwnerKey;
