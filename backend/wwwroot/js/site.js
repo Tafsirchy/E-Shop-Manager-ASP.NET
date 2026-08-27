@@ -384,13 +384,14 @@
             var y = window.scrollY || window.pageYOffset;
             if (hoverLocked) return;
             if (y > THRESHOLD) {
-                hideNav();
-            } else {
                 showNav();
+            } else {
+                hideNav();
             }
         }
 
         window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
 
         var hoverZone = document.createElement('div');
         hoverZone.className = 'fixed top-0 left-0 right-0 h-2 z-40';
@@ -405,7 +406,7 @@
         nav.addEventListener('mouseleave', function () {
             hoverLocked = false;
             var y = window.scrollY || window.pageYOffset;
-            if (y > THRESHOLD) {
+            if (y <= THRESHOLD) {
                 hideNav();
             }
         });
