@@ -1,5 +1,6 @@
 using EShopManager.API.Models;
 using MongoDB.Driver;
+using System.Security.Claims;
 
 namespace EShopManager.API.Services
 {
@@ -7,15 +8,20 @@ namespace EShopManager.API.Services
     {
         private readonly IMongoCollection<Review> _reviewsCollection;
         private readonly IMongoCollection<Product> _productsCollection;
+        private readonly IMongoCollection<User> _usersCollection;
 
         public ReviewService(IMongoDatabase database)
         {
             _reviewsCollection = database.GetCollection<Review>("Reviews");
             _productsCollection = database.GetCollection<Product>("Products");
+            _usersCollection = database.GetCollection<User>("Customers");
 
             var productIndex = Builders<Review>.IndexKeys.Ascending(x => x.ProductId).Ascending(x => x.Status).Ascending(x => x.CreatedAt);
             _reviewsCollection.Indexes.CreateOne(new CreateIndexModel<Review>(productIndex));
         }
+
+        public async Task<Review?> GetByIdAsync(string id) =>
+            await _reviewsCollection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync().ConfigureAwait(false);
 
         public async Task<List<Review>> GetForProductAsync(string productId, string? status = "approved", int skip = 0, int limit = 10)
         {
@@ -64,6 +70,63 @@ namespace EShopManager.API.Services
             await UpdateProductRatingAsync(request.ProductId).ConfigureAwait(false);
             return (review, null);
         }
+
+        public async Task<(Review? Review, string? Error)> UpdateAsync(string id, ReviewUpdateRequest request, string userId)
+        {
+            var review = await _reviewsCollection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync().ConfigureAwait(false);
+            if (review == null) return (null, "Review not found.");
+            if (review.UserId != userId) return (null, "You can only edit your own review.");
+
+            var update = Builders<Review>.Update
+                .Set(x => x.Rating, request.Rating)
+                .Set(x => x.Title, request.Title)
+                .Set(x => x.Comment, request.Comment)
+                .Set(x => x.VideoUrl, request.VideoUrl)
+                .Set(x => x.UpdatedAt, DateTime.UtcNow)
+                .Set(x => x.EditedAt, DateTime.UtcNow)
+                .Set(x => x.Status, "pending");
+
+            await _reviewsCollection.UpdateOneAsync(x => x.Id == id, update).ConfigureAwait(false);
+            await UpdateProductRatingAsync(review.ProductId).ConfigureAwait(false);
+            return (await GetByIdAsync(id).ConfigureAwait(false), null);
+        }
+
+        public async Task<(bool Success, string? Error)> DeleteAsync(string id, string userId, bool isAdmin = false)
+        {
+            var review = await _reviewsCollection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync().ConfigureAwait(false);
+            if (review == null) return (false, "Review not found.");
+            if (!isAdmin && review.UserId != userId) return (false, "You can only delete your own review.");
+
+            var update = Builders<Review>.Update
+                .Set(x => x.IsDeleted, true)
+                .Set(x => x.Status, "rejected")
+                .Set(x => x.UpdatedAt, DateTime.UtcNow);
+
+            await _reviewsCollection.UpdateOneAsync(x => x.Id == id, update).ConfigureAwait(false);
+            await UpdateProductRatingAsync(review.ProductId).ConfigureAwait(false);
+            return (true, null);
+        }
+
+        public async Task<(bool Success, string? Error)> AddSellerReplyAsync(string id, string text, string userId, bool isAdmin = false)
+        {
+            var review = await _reviewsCollection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync().ConfigureAwait(false);
+            if (review == null) return (false, "Review not found.");
+
+            var product = await _productsCollection.Find(x => x.Id == review.ProductId).FirstOrDefaultAsync().ConfigureAwait(false);
+            if (product == null) return (false, "Product not found.");
+
+            if (!isAdmin && product.Category != "seller")
+            {
+                return (false, "Only the seller or an admin can reply to a review.");
+            }
+
+            var update = Builders<Review>.Update.Set(x => x.SellerReply, new ReviewReply { Text = text, RepliedAt = DateTime.UtcNow });
+            await _reviewsCollection.UpdateOneAsync(x => x.Id == id, update).ConfigureAwait(false);
+            return (true, null);
+        }
+
+        public async Task<List<Review>> GetPendingAsync() =>
+            await _reviewsCollection.Find(x => x.Status == "pending" && !x.IsDeleted).SortByDescending(x => x.CreatedAt).ToListAsync().ConfigureAwait(false);
 
         private async Task UpdateProductRatingAsync(string productId)
         {
