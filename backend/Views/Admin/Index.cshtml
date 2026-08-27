@@ -19,7 +19,24 @@
 
         @if (!string.IsNullOrEmpty(Model.Message))
         {
-            <div class="mb-6 rounded-lg px-4 py-3 text-sm font-medium @(Model.MessageIsError ? "bg-danger-500/15 text-danger-600" : "bg-success-500/15 text-success-600")">@Model.Message</div>
+            <div id="toast" class="fixed top-24 right-6 z-[100] max-w-sm animate-toast-in mb-6" role="alert">
+                <div class="flex items-start gap-3 rounded-xl border-l-4 px-4 py-3.5 shadow-lg backdrop-blur-sm @(Model.MessageIsError ? "border-l-danger-500 bg-danger-50 text-danger-700" : "border-l-success-500 bg-success-50 text-success-700")">
+                    <span class="mt-0.5 flex-shrink-0 @(Model.MessageIsError ? "text-danger-500" : "text-success-500")">
+                        @if (Model.MessageIsError)
+                        {
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        }
+                        else
+                        {
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        }
+                    </span>
+                    <p class="flex-1 text-sm font-medium leading-snug">@Model.Message</p>
+                    <button type="button" onclick="this.closest('#toast').remove()" class="flex-shrink-0 ml-1 rounded-lg p-1 hover:bg-black/5 transition-colors" aria-label="Dismiss">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </div>
         }
 
         <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-10">
