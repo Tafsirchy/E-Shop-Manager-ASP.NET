@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Linq;
 
 namespace EShopManager.API.Controllers
 {
@@ -30,7 +31,7 @@ namespace EShopManager.API.Controllers
         public IActionResult Login(string? returnUrl = null)
         {
             if (_me.IsAuthenticated) return RedirectToAction("Index", "Home");
-            return View(new LoginViewModel { ReturnUrl = returnUrl });
+            return RedirectToAction("Index", "Home", new { auth = "login", returnUrl = returnUrl });
         }
 
         [HttpPost]
@@ -38,12 +39,19 @@ namespace EShopManager.API.Controllers
         [EnableRateLimiting("auth-ip")]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
-            if (!ModelState.IsValid) return View(model);
+            var isAjax = Request.Headers["X-Requested-With"] == "fetch";
+            if (!ModelState.IsValid)
+            {
+                if (isAjax) return Json(new { success = false, errors = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)) });
+                return View(model);
+            }
 
             var (user, error) = await _userService.ValidateCredentialsAsync(model.Email, model.Password);
             if (user == null)
             {
-                ModelState.AddModelError(string.Empty, error ?? "Unable to sign in.");
+                var msg = error ?? "Unable to sign in.";
+                if (isAjax) return Json(new { success = false, errors = msg });
+                ModelState.AddModelError(string.Empty, msg);
                 return View(model);
             }
 
@@ -55,6 +63,16 @@ namespace EShopManager.API.Controllers
             TempData["StatusMessage"] = mergeResult.Items.Count > 0
                 ? $"Signed in. {mergeResult.Items.Count} item(s) from your guest session were merged into your cart."
                 : null;
+
+            if (isAjax)
+            {
+                var redirect = user.Role == UserRole.Admin
+                    ? Url.Action("Index", "Admin")
+                    : (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl)
+                        ? model.ReturnUrl
+                        : Url.Action("Index", "Home"));
+                return Json(new { success = true, redirectUrl = redirect });
+            }
 
             if (user.Role == UserRole.Admin) return RedirectToAction("Index", "Admin");
 
@@ -68,7 +86,7 @@ namespace EShopManager.API.Controllers
         public IActionResult Register()
         {
             if (_me.IsAuthenticated) return RedirectToAction("Index", "Home");
-            return View(new RegisterViewModel());
+            return RedirectToAction("Index", "Home", new { auth = "register" });
         }
 
         [HttpPost]
@@ -76,13 +94,20 @@ namespace EShopManager.API.Controllers
         [EnableRateLimiting("auth-ip")]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
-            if (!ModelState.IsValid) return View(model);
+            var isAjax = Request.Headers["X-Requested-With"] == "fetch";
+            if (!ModelState.IsValid)
+            {
+                if (isAjax) return Json(new { success = false, errors = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)) });
+                return View(model);
+            }
 
             var guestId = _me.EnsureGuestId();
             var (user, error) = await _userService.RegisterAsync(model.Name, model.Email, model.Password);
             if (user == null)
             {
-                ModelState.AddModelError(string.Empty, error ?? "Unable to create account.");
+                var msg = error ?? "Unable to create account.";
+                if (isAjax) return Json(new { success = false, errors = msg });
+                ModelState.AddModelError(string.Empty, msg);
                 return View(model);
             }
 
@@ -92,6 +117,7 @@ namespace EShopManager.API.Controllers
 
             await SignInAsync(user);
             TempData["StatusMessage"] = "Account created successfully. Welcome to E-Shop!";
+            if (isAjax) return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
             return RedirectToAction("Index", "Home");
         }
 
