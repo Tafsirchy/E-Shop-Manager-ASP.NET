@@ -37,7 +37,7 @@
                             }
                             <p class="text-xs text-neutral-400 mt-1">Added @row.Item.AddedAt.ToLocalTime().ToString("MMM d, yyyy")</p>
                         </div>
-                        <form asp-controller="Wishlist" asp-action="Remove" method="post">
+                        <form asp-controller="Wishlist" asp-action="Remove" method="post" data-no-loading="true">
                             <input type="hidden" name="itemId" value="@row.Item.ItemId" />
                             <button type="submit" class="rounded-full border border-border px-4 py-1.5 text-sm font-semibold text-danger-500 hover:border-danger-400 transition">Remove</button>
                         </form>
