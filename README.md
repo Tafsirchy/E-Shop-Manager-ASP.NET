@@ -173,6 +173,7 @@ Secrets are stored in **User-scope environment variables** (never in `appsetting
 # PowerShell (run once per machine)
 [System.Environment]::SetEnvironmentVariable("EShopDatabase__ConnectionString", "mongodb://localhost:27017", "User")
 [System.Environment]::SetEnvironmentVariable("Stripe__SecretKey", "sk_test_...", "User")
+[System.Environment]::SetEnvironmentVariable("JwtSettings__Secret", "your-secret-key", "User")
 ```
 
 ### 2. Build & Run
@@ -286,8 +287,8 @@ On login or registration, guest cart and wishlist items are merged into the user
 ### Authenticated
 | Route | Description |
 |-------|-------------|
-| `GET/POST /Account/Login` | Login |
-| `GET/POST /Account/Register` | Register |
+| `POST /Account/Login` | Login (via auth modal) |
+| `POST /Account/Register` | Register (via auth modal) |
 | `POST /Account/Logout` | Sign out |
 | `GET /Cart` | Shopping cart |
 | `POST /Cart/Add` | Add to cart |
@@ -331,6 +332,7 @@ On login or registration, guest cart and wishlist items are merged into the user
 4. Set environment variables:
    - `EShopDatabase__ConnectionString`
    - `Stripe__SecretKey`
+   - `JwtSettings__Secret`
 5. Deploy — auto-detects .NET
 
 ### Other Options
