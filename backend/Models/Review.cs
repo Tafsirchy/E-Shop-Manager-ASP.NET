@@ -17,6 +17,9 @@ namespace EShopManager.API.Models
         public string? Comment { get; set; }
         public string? VideoUrl { get; set; }
         public bool IsVerifiedPurchase { get; set; }
+        public int HelpfulCount { get; set; }
+        public int ReportCount { get; set; }
+        public bool IsFlagged { get; set; }
         public string Status { get; set; } = "approved";
         public ReviewReply? SellerReply { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -47,5 +50,10 @@ namespace EShopManager.API.Models
         public string? Title { get; set; }
         public string? Comment { get; set; }
         public string? VideoUrl { get; set; }
+    }
+
+    public class ReviewReplyRequest
+    {
+        public string Text { get; set; } = null!;
     }
 }
