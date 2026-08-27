@@ -1,7 +1,8 @@
 @model Product
 @{
     var returnUrl = Context.Request.Path + Context.Request.QueryString;
-    var inWishlist = ViewBag.InWishlist as bool? ?? false;
+    var inWishlistSet = ViewBag.WishlistedIds as HashSet<string> ?? new HashSet<string>();
+    var inWishlist = inWishlistSet.Contains(Model.Id);
     var cardSrcset = ImageUrls.Srcset(Model.ImageUrl);
     var gallery = new List<string>();
     if (!string.IsNullOrEmpty(Model.ImageUrl)) gallery.Add(Model.ImageUrl);
@@ -34,13 +35,23 @@
             </span>
         }
 
+        @if (gallery.Count > 1)
+        {
+            <div data-carousel-dots class="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5" aria-hidden="true">
+                @for (int i = 0; i < Math.Min(gallery.Count, 5); i++)
+                {
+                    <span class="h-1.5 rounded-full transition-all duration-200 @(i == 0 ? "w-4 bg-neutral-900/70" : "w-1.5 bg-neutral-900/25")"></span>
+                }
+            </div>
+        }
+
         <div class="absolute top-3 right-3 z-20">
-            <form asp-controller="Wishlist" asp-action="Toggle" method="post">
+            <form asp-controller="Wishlist" asp-action="Toggle" method="post" data-no-loading="true">
                 <input type="hidden" name="ProductId" value="@Model.Id" />
                 <input type="hidden" name="ReturnUrl" value="@returnUrl" />
                 <button type="submit" aria-label="Toggle wishlist" title="Toggle wishlist"
-                        class="flex h-9 w-9 items-center justify-center rounded-full bg-white/95 shadow-md transition hover:scale-110 @(inWishlist ? "text-danger-500" : "text-neutral-400")">
-                    <svg class="w-5 h-5" fill="@(inWishlist ? "currentColor" : "none")" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                        class="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/95 shadow-md transition hover:scale-110 @(inWishlist ? "text-danger-500" : "text-neutral-400")">
+                    <svg class="w-5 h-5 transition-transform duration-200" fill="@(inWishlist ? "currentColor" : "none")" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
                 </button>
             </form>
         </div>
