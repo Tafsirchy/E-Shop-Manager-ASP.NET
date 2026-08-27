@@ -14,8 +14,8 @@
 </head>
 <body class="bg-background text-foreground font-sans antialiased flex flex-col min-h-screen">
 
-    <div class="sticky top-0 z-50 w-full">
-        <header class="bg-white border-b border-neutral-100 shadow-sm">
+    <div class="fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 translate-y-0" id="main-nav">
+        <header class="bg-white/95 backdrop-blur-sm">
             <nav class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
 
                 <div class="flex-shrink-0 flex items-center">
@@ -89,8 +89,9 @@
                         </form>
                     </div>
 
-                    <a asp-controller="Wishlist" asp-action="Index" class="text-foreground hover:text-danger-500 transition" aria-label="Wishlist">
+                    <a asp-controller="Wishlist" asp-action="Index" class="relative text-foreground hover:text-danger-500 transition" aria-label="Wishlist">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                        <span id="wishlist-badge" class="hidden absolute -top-2 -right-2 bg-danger-500 text-white rounded-full text-xs px-2">0</span>
                     </a>
 
                     <a asp-controller="Cart" asp-action="Index" class="relative text-foreground hover:text-primary-600 transition" aria-label="Cart">
@@ -112,7 +113,7 @@
                     }
                     else
                     {
-                        <a asp-controller="Account" asp-action="Login" class="text-[14px] font-bold text-foreground border-2 border-foreground px-5 py-1.5 rounded-full hover:bg-foreground hover:text-white transition-colors">Sign In</a>
+                        <button type="button" data-auth-toggle="signin" class="text-[14px] font-bold text-foreground border-2 border-foreground px-5 py-1.5 rounded-full hover:bg-foreground hover:text-white transition-colors cursor-pointer">Sign In</button>
                     }
                 </div>
             </nav>
@@ -121,9 +122,22 @@
 
     @if (!string.IsNullOrEmpty(statusMessage))
     {
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full" data-autohide>
-            <div class="rounded-lg px-4 py-3 text-sm font-medium @(statusIsError ? "bg-danger-500/15 text-danger-600" : "bg-success-500/15 text-success-600")">
-                @statusMessage
+        <div id="toast" class="fixed top-24 right-6 z-[100] max-w-sm animate-toast-in" role="alert">
+            <div class="flex items-start gap-3 rounded-xl border-l-4 px-4 py-3.5 shadow-lg backdrop-blur-sm @(statusIsError ? "border-l-danger-500 bg-danger-50 text-danger-700" : "border-l-success-500 bg-success-50 text-success-700")">
+                <span class="mt-0.5 flex-shrink-0 @(statusIsError ? "text-danger-500" : "text-success-500")">
+                    @if (statusIsError)
+                    {
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    }
+                    else
+                    {
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    }
+                </span>
+                <p class="flex-1 text-sm font-medium leading-snug">@statusMessage</p>
+                <button type="button" onclick="this.closest('#toast').remove()" class="flex-shrink-0 ml-1 rounded-lg p-1 hover:bg-black/5 transition-colors" aria-label="Dismiss">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
             </div>
         </div>
     }
@@ -184,5 +198,8 @@
     </footer>
 
     <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)</body>
+    @await RenderSectionAsync("Scripts", required: false)
+
+    <partial name="_AuthModal" />
+</body>
 </html>
