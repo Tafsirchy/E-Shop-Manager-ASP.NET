@@ -58,6 +58,8 @@ namespace EShopManager.API.Models
             NoCategoryDiscount.Instance
         };
 
+        public static IReadOnlyList<CategoryDiscountPolicy> All => Policies;
+
         public static CategoryDiscountPolicy Resolve(string? category) =>
             Policies.First(p => p.Matches(category ?? string.Empty));
     }
