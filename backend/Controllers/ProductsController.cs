@@ -10,14 +10,16 @@ namespace EShopManager.API.Controllers
     {
         private readonly ProductService _productService;
         private readonly ReviewService _reviewService;
+        private readonly WishlistService _wishlistService;
         private readonly CurrentUser _me;
         private readonly IWebHostEnvironment _env;
 
         public ProductsController(ProductService productService, ReviewService reviewService,
-            CurrentUser me, IWebHostEnvironment env)
+            WishlistService wishlistService, CurrentUser me, IWebHostEnvironment env)
         {
             _productService = productService;
             _reviewService = reviewService;
+            _wishlistService = wishlistService;
             _me = me;
             _env = env;
         }
@@ -41,6 +43,8 @@ namespace EShopManager.API.Controllers
             page = Math.Clamp(page, 1, totalPages);
             var pagedProducts = products.Skip((page - 1) * PageSize).Take(PageSize).ToList();
 
+            ViewBag.WishlistedIds = await GetWishlistedIdsAsync();
+
             return View(new ProductListViewModel
             {
                 Products = pagedProducts,
@@ -60,6 +64,8 @@ namespace EShopManager.API.Controllers
             if (product == null) return NotFound();
 
             var reviews = await _reviewService.GetForProductAsync(id, limit: 6);
+            var wishlistedIds = await GetWishlistedIdsAsync();
+            ViewBag.InWishlist = wishlistedIds.Contains(id);
             return View(new ProductDetailsViewModel
             {
                 Product = product,
@@ -209,6 +215,14 @@ namespace EShopManager.API.Controllers
             await _productService.RemoveAsync(id);
             TempData["StatusMessage"] = "Product deleted.";
             return RedirectToAction("Products", "Admin");
+        }
+
+        private async Task<HashSet<string>> GetWishlistedIdsAsync()
+        {
+            var owner = _me.OwnerKey;
+            var isGuest = !_me.IsAuthenticated;
+            var wl = isGuest ? await _wishlistService.GetByGuestAsync(owner) : await _wishlistService.GetByUserAsync(owner);
+            return wl?.Items.Select(i => i.ProductId).ToHashSet() ?? new HashSet<string>();
         }
     }
 }
