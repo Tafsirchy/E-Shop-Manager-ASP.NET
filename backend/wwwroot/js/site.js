@@ -97,6 +97,28 @@
             .catch(function () { /* badge stays as-is */ });
     }
 
+    /* ---------- Wishlist badge ---------- */
+
+    function updateWishlistBadge(count) {
+        var badge = document.getElementById('wishlist-badge');
+        if (!badge) return;
+        count = parseInt(count, 10);
+        if (!isNaN(count) && count > 0) {
+            badge.textContent = count > 99 ? '99+' : String(count);
+            badge.classList.remove('hidden');
+        } else {
+            badge.textContent = '0';
+            badge.classList.add('hidden');
+        }
+    }
+
+    function refreshWishlistBadge() {
+        fetch('/Wishlist/Count', { headers: { 'X-Requested-With': 'fetch' } })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) { if (data) updateWishlistBadge(data.count); })
+            .catch(function () { /* badge stays as-is */ });
+    }
+
     /* ---------- Search expand / collapse ---------- */
 
     function initSearchToggle() {
@@ -339,23 +361,217 @@
         if (updateBtn) updateBtn.addEventListener('click', function () { location.reload(); });
     }
 
+    /* ---------- Navbar scroll show/hide + hover reveal ---------- */
+
+    function initNavbar() {
+        var nav = document.getElementById('main-nav');
+        if (!nav) return;
+
+        var THRESHOLD = 80;
+        var hoverLocked = false;
+
+        function showNav() {
+            nav.classList.remove('-translate-y-full');
+            nav.classList.add('translate-y-0');
+        }
+
+        function hideNav() {
+            nav.classList.remove('translate-y-0');
+            nav.classList.add('-translate-y-full');
+        }
+
+        function onScroll() {
+            var y = window.scrollY || window.pageYOffset;
+            if (hoverLocked) return;
+            if (y > THRESHOLD) {
+                hideNav();
+            } else {
+                showNav();
+            }
+        }
+
+        window.addEventListener('scroll', onScroll, { passive: true });
+
+        var hoverZone = document.createElement('div');
+        hoverZone.className = 'fixed top-0 left-0 right-0 h-2 z-40';
+        hoverZone.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(hoverZone);
+
+        hoverZone.addEventListener('mouseenter', function () {
+            hoverLocked = true;
+            showNav();
+        });
+
+        nav.addEventListener('mouseleave', function () {
+            hoverLocked = false;
+            var y = window.scrollY || window.pageYOffset;
+            if (y > THRESHOLD) {
+                hideNav();
+            }
+        });
+    }
+
+    /* ---------- Auth modal (Sign In / Sign Up) ---------- */
+
+    function initAuthModal() {
+        var modal = document.getElementById('auth-modal');
+        if (!modal) return;
+
+        var overlay = document.getElementById('auth-overlay');
+        var closeBtn = document.getElementById('auth-close');
+        var msg = document.getElementById('auth-msg');
+        var tabs = document.querySelectorAll('[data-auth-tab]');
+        var panelLogin = document.getElementById('auth-panel-login');
+        var panelRegister = document.getElementById('auth-panel-register');
+        var activeTab = 'login';
+
+        function setTab(tab) {
+            activeTab = tab;
+            tabs.forEach(function (t) {
+                var isActive = t.dataset.authTab === tab;
+                t.classList.toggle('border-primary-600', isActive);
+                t.classList.toggle('text-primary-600', isActive);
+                t.classList.toggle('text-neutral-400', !isActive);
+                t.classList.toggle('border-transparent', !isActive);
+            });
+            panelLogin.classList.toggle('hidden', tab !== 'login');
+            panelRegister.classList.toggle('hidden', tab !== 'register');
+            hideMsg();
+        }
+
+        function open(tab, returnUrl) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            var returnField = modal.querySelector('#auth-panel-login input[name="ReturnUrl"]');
+            if (returnField) returnField.value = returnUrl || '';
+            setTab(tab || activeTab);
+            var first = modal.querySelector('#' + (activeTab === 'login' ? 'login-email' : 'register-name'));
+            if (first) setTimeout(function () { first.focus(); }, 100);
+        }
+
+        function close() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            hideMsg();
+            modal.querySelectorAll('#auth-modal form').forEach(function (f) { f.reset(); });
+        }
+
+        function hideMsg() {
+            msg.classList.add('hidden');
+            msg.textContent = '';
+        }
+
+        function showMsg(text, isError) {
+            msg.textContent = text;
+            msg.classList.remove('hidden');
+            msg.classList.toggle('border-l-danger-500', isError);
+            msg.classList.toggle('bg-danger-50', isError);
+            msg.classList.toggle('text-danger-700', isError);
+            msg.classList.toggle('border-l-success-500', !isError);
+            msg.classList.toggle('bg-success-50', !isError);
+            msg.classList.toggle('text-success-700', !isError);
+        }
+
+        // Global triggers: any element with [data-auth-toggle]
+        document.addEventListener('click', function (e) {
+            var trigger = e.target.closest ? e.target.closest('[data-auth-toggle]') : null;
+            if (trigger) {
+                e.preventDefault();
+                open(trigger.dataset.authToggle === 'signup' ? 'register' : 'login', trigger.dataset.returnUrl);
+            }
+        });
+
+        // Auto-open from ?auth=login|register query param (fallback link support)
+        var params = new URLSearchParams(location.search);
+        if (params.get('auth') === 'login' || params.get('auth') === 'register') {
+            open(params.get('auth') === 'register' ? 'register' : 'login');
+            history.replaceState({}, '', location.pathname);
+        }
+
+        tabs.forEach(function (t) {
+            t.addEventListener('click', function () { setTab(t.dataset.authTab); });
+        });
+
+        if (closeBtn) closeBtn.addEventListener('click', close);
+        if (overlay) overlay.addEventListener('click', close);
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) close();
+        });
+
+        // AJAX submit
+        modal.addEventListener('submit', function (e) {
+            var form = e.target;
+            if (!form.matches('[data-auth-form]')) return;
+            e.preventDefault();
+
+            var btn = form.querySelector('button[type="submit"]');
+            var spinBtn = btn;
+            var btnText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Please wait...';
+
+            var url = form.getAttribute('action');
+            var body = new FormData(form);
+            body.append('__RequestVerificationToken', '');
+            // token comes from the form's hidden field normally; use actual if present
+            var tok = form.querySelector('input[name="__RequestVerificationToken"]');
+            if (tok) body.set('__RequestVerificationToken', tok.value);
+
+            fetch(url, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'fetch' },
+                body: body
+            })
+                .then(function (r) {
+                    return r.json().then(function (data) { return { ok: r.ok, data: data }; });
+                })
+                .then(function (res) {
+                    if (res.ok && res.data.success) {
+                        window.location.href = res.data.redirectUrl || '/';
+                    } else if (res.data && res.data.errors) {
+                        showMsg(res.data.errors, true);
+                        btn.disabled = false;
+                        btn.textContent = btnText;
+                    } else {
+                        showMsg('Unable to process your request.', true);
+                        btn.disabled = false;
+                        btn.textContent = btnText;
+                    }
+                })
+                .catch(function () {
+                    showMsg('Network error. Please try again.', true);
+                    btn.disabled = false;
+                    btn.textContent = btnText;
+                });
+        });
+    }
+
     /* ---------- Boot ---------- */
 
     document.addEventListener('DOMContentLoaded', function () {
-        var banner = document.querySelector('[data-autohide]');
-        if (banner) {
+        document.querySelectorAll('#toast').forEach(function (toast) {
             setTimeout(function () {
-                banner.style.transition = 'opacity 0.5s ease';
-                banner.style.opacity = '0';
-                setTimeout(function () { banner.remove(); }, 500);
+                toast.style.animation = 'toast-out 0.3s ease forwards';
+                setTimeout(function () { toast.remove(); }, 300);
             }, 4000);
-        }
+        });
 
         refreshCartBadge();
+        refreshWishlistBadge();
+        initNavbar();
+        initAuthModal();
         initSearchToggle();
         initSearchSuggestions();
         initPrefetch();
         initCartPage();
     });
 
+    window.refreshCartBadge = refreshCartBadge;
+    window.refreshWishlistBadge = refreshWishlistBadge;
 })();
