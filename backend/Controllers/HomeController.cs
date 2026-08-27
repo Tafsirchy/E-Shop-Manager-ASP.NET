@@ -8,17 +8,21 @@ namespace EShopManager.API.Controllers
     public class HomeController : Controller
     {
         private readonly ProductService _productService;
+        private readonly WishlistService _wishlistService;
         private readonly CurrentUser _me;
 
-        public HomeController(ProductService productService, CurrentUser me)
+        public HomeController(ProductService productService, WishlistService wishlistService, CurrentUser me)
         {
             _productService = productService;
+            _wishlistService = wishlistService;
             _me = me;
         }
 
         public async Task<IActionResult> Index()
         {
             var products = await _productService.GetAsync();
+            var wishlistedIds = await GetWishlistedIdsAsync();
+            ViewBag.WishlistedIds = wishlistedIds;
             var model = new HomeIndexViewModel
             {
                 NewArrivals = products
@@ -70,6 +74,14 @@ namespace EShopManager.API.Controllers
         {
             ViewData["StatusCode"] = statusCode;
             return View();
+        }
+
+        private async Task<HashSet<string>> GetWishlistedIdsAsync()
+        {
+            var owner = _me.OwnerKey;
+            var isGuest = !_me.IsAuthenticated;
+            var wl = isGuest ? await _wishlistService.GetByGuestAsync(owner) : await _wishlistService.GetByUserAsync(owner);
+            return wl?.Items.Select(i => i.ProductId).ToHashSet() ?? new HashSet<string>();
         }
     }
 }
