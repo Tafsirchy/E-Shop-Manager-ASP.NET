@@ -14,6 +14,7 @@ namespace EShopManager.API.Models
         public string BillingType { get; set; } = "Monthly"; // One-time or Monthly
         public List<string> Features { get; set; } = new();
         public SubscriptionOffer? Offer { get; set; }
+        public DateTime? Deadline { get; set; }
         public bool IsActive { get; set; } = true;
     }
 
