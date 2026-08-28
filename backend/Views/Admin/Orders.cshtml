@@ -1,0 +1,86 @@
+@model AdminOrdersViewModel
+@{
+    ViewData["Title"] = "Manage Orders";
+    var statuses = new[] { "All", "Pending", "Processing", "In Transit", "Shipped", "Delivered", "Cancelled" };
+    Func<string, string> badge = s => s switch
+    {
+        "Delivered" => "bg-success-500/15 text-success-600",
+        "Cancelled" => "bg-danger-500/15 text-danger-600",
+        "Pending" => "bg-warning-500/15 text-warning-500",
+        "Processing" => "bg-sky-500/15 text-sky-600",
+        "In Transit" => "bg-primary-600/10 text-primary-700",
+        "Shipped" => "bg-violet-500/15 text-violet-600",
+        _ => "bg-neutral-100 text-neutral-600"
+    };
+}
+<main class="min-h-screen">
+    <div class="max-w-6xl mx-auto">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+            <h1 class="text-2xl font-bold text-foreground">Manage Orders</h1>
+            <p class="text-sm text-neutral-500">@Model.Orders.Count order(s)</p>
+        </div>
+
+        <div class="flex flex-wrap gap-2 mb-6">
+            @foreach (var s in statuses)
+            {
+                <a asp-action="Orders" asp-route-status="@(s == "All" ? null : s)"
+                   class="rounded-full border px-4 py-1.5 text-xs font-semibold transition @(Model.Status == s ? "border-primary-600 bg-primary-600 text-white" : "border-border text-neutral-500 hover:border-neutral-400")">@s</a>
+            }
+        </div>
+
+        <div class="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            @if (!Model.Orders.Any())
+            {
+                <p class="text-sm text-neutral-500">No orders found.</p>
+            }
+            else
+            {
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="border-b border-border text-xs uppercase tracking-widest text-neutral-500">
+                                <th class="py-3 pr-4">Order</th>
+                                <th class="py-3 pr-4">Customer</th>
+                                <th class="py-3 pr-4">Items</th>
+                                <th class="py-3 pr-4">Total</th>
+                                <th class="py-3 text-right">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border text-sm">
+                            @foreach (var order in Model.Orders)
+                            {
+                                <tr class="align-top">
+                                    <td class="py-4 pr-4">
+                                        <a asp-controller="Orders" asp-action="Details" asp-route-id="@order.Id"
+                                           class="font-mono font-semibold text-primary-600 hover:underline">#@(order.Id?.Length > 10 ? order.Id[..10] : order.Id)</a>
+                                        <div class="text-xs text-neutral-400 mt-1">@order.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</div>
+                                    </td>
+                                    <td class="py-4 pr-4 text-neutral-500">@order.UserId</td>
+                                    <td class="py-4 pr-4">@order.Items.Count</td>
+                                    <td class="py-4 pr-4 font-semibold">&#2547;@order.TotalAmount.ToString("0.##")</td>
+                                    <td class="py-4 text-right">
+                                        <form asp-action="UpdateOrderStatus" method="post" class="inline-flex flex-col items-end gap-2">
+                                            <input type="hidden" name="id" value="@order.Id" />
+                                            <span class="rounded-full px-3 py-1 text-xs font-semibold @badge(order.Status)">@order.Status</span>
+                                            <div class="flex items-center gap-2">
+                                                <select name="status" class="rounded-xl border border-border px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary-500">
+                                                    @foreach (var s in statuses.Skip(1))
+                                                    {
+                                                        <option value="@s" selected="@(order.Status == s)">@s</option>
+                                                    }
+                                                </select>
+                                                <input type="text" name="trackingNumber" value="@order.TrackingNumber" placeholder="Tracking #"
+                                                       class="w-36 rounded-xl border border-border px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary-500" />
+                                                <button type="submit" class="rounded-full bg-primary-600 px-4 py-2 text-xs font-semibold text-white hover:bg-primary-700 transition">Update</button>
+                                            </div>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</main>
