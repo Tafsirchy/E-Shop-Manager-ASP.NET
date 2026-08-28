@@ -173,6 +173,67 @@ namespace EShopManager.API.Services
             await _cartCollection.DeleteOneAsync(x => x.UserId == userId);
         }
 
+        public async Task<CartOperationResult> ApplyCouponAsync(string userId, string? couponCode, decimal? discount)
+        {
+            if (string.IsNullOrWhiteSpace(couponCode) || discount == null)
+                return new CartOperationResult { Success = false, Message = "Unknown or expired coupon code." };
+
+            var cart = await GetCartAsync(userId);
+            if (cart == null || !cart.Items.Any())
+                return new CartOperationResult { Success = false, Message = "Your cart is empty." };
+
+            var attempt = 0;
+            while (attempt < 3)
+            {
+                var currentVersion = cart.Version;
+                cart.AppliedCouponCode = couponCode.Trim().ToUpper();
+                cart.UpdatedAt = DateTime.UtcNow;
+                cart.Version = currentVersion + 1;
+
+                var filter = Builders<Cart>.Filter.And(
+                    Builders<Cart>.Filter.Eq(x => x.Id, cart.Id),
+                    Builders<Cart>.Filter.Eq(x => x.Version, currentVersion)
+                );
+
+                var res = await _cartCollection.ReplaceOneAsync(filter, cart);
+                if (res.ModifiedCount > 0) return new CartOperationResult { Success = true, Payload = cart };
+
+                cart = await GetCartAsync(userId);
+                if (cart == null || !cart.Items.Any())
+                    return new CartOperationResult { Success = false, Message = "Your cart is empty." };
+                attempt++;
+            }
+
+            return new CartOperationResult { Success = false, Message = "StaleCart" };
+        }
+
+        public async Task RemoveCouponAsync(string userId)
+        {
+            var cart = await GetCartAsync(userId);
+            if (cart == null) return;
+
+            var attempt = 0;
+            while (attempt < 3)
+            {
+                var currentVersion = cart.Version;
+                cart.AppliedCouponCode = null;
+                cart.UpdatedAt = DateTime.UtcNow;
+                cart.Version = currentVersion + 1;
+
+                var filter = Builders<Cart>.Filter.And(
+                    Builders<Cart>.Filter.Eq(x => x.Id, cart.Id),
+                    Builders<Cart>.Filter.Eq(x => x.Version, currentVersion)
+                );
+
+                var res = await _cartCollection.ReplaceOneAsync(filter, cart);
+                if (res.ModifiedCount > 0) return;
+
+                cart = await GetCartAsync(userId);
+                if (cart == null) return;
+                attempt++;
+            }
+        }
+
         public async Task<MergeHelper.MergeResult> MergeGuestIntoUserAsync(string guestSessionId, string userId)
         {
             var guestCart = await GetCartAsync(guestSessionId);
