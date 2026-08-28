@@ -10,7 +10,7 @@ namespace EShopManager.API.Controllers
     public class OrdersController : Controller
     {
         private static readonly string[] AllowedStatuses =
-            { "Pending", "Processing", "Shipped", "Delivered", "Cancelled" };
+            { "Pending", "Processing", "In Transit", "Shipped", "Delivered", "Cancelled" };
 
         private readonly OrderService _orderService;
         private readonly ProductService _productService;
@@ -33,6 +33,17 @@ namespace EShopManager.API.Controllers
         public async Task<IActionResult> Index()
         {
             var orders = await _orderService.GetUserOrdersAsync(_me.Email);
+            foreach (var order in orders)
+            {
+                foreach (var item in order.Items)
+                {
+                    if (string.IsNullOrWhiteSpace(item.ProductName))
+                    {
+                        var product = await _productService.GetAsync(item.ProductId);
+                        item.ProductName = product?.Name ?? item.ProductName;
+                    }
+                }
+            }
             return View(new OrdersIndexViewModel
             {
                 Orders = orders.OrderByDescending(o => o.CreatedAt).ToList()
@@ -47,9 +58,19 @@ namespace EShopManager.API.Controllers
 
             var history = await _orderService.GetHistoryAsync(id);
 
+            // Hydrate product names for display; fall back to stored snapshot or ID.
+            foreach (var item in order!.Items)
+            {
+                if (string.IsNullOrWhiteSpace(item.ProductName))
+                {
+                    var product = await _productService.GetAsync(item.ProductId);
+                    item.ProductName = product?.Name ?? item.ProductName;
+                }
+            }
+
             return View(new OrderDetailsViewModel
             {
-                Order = order!,
+                Order = order,
                 History = history,
                 IsAdmin = string.Equals(_me.Role, UserRole.Admin.ToString())
             });
