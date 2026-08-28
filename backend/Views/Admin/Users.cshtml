@@ -2,11 +2,11 @@
 @{
     ViewData["Title"] = "Manage Users";
 }
-<main class="min-h-screen p-8 bg-background">
+<main class="min-h-screen">
     <div class="max-w-6xl mx-auto">
         <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
-            <h1 class="text-3xl font-bold text-foreground">Manage Users</h1>
-            <a asp-action="Index" class="rounded-full border border-border px-5 py-2.5 text-sm font-semibold hover:border-neutral-400 transition">Back to Dashboard</a>
+            <h1 class="text-2xl font-bold text-foreground">Manage Users</h1>
+            <p class="text-sm text-neutral-500">@Model.Users.Count user(s)</p>
         </div>
 
         <div class="rounded-2xl border border-border bg-card p-6 shadow-sm">
@@ -22,17 +22,38 @@
                             <tr class="border-b border-border text-xs uppercase tracking-widest text-neutral-500">
                                 <th class="py-3 pr-4">Name</th>
                                 <th class="py-3 pr-4">Email</th>
-                                <th class="py-3 pr-4">Role</th>
+                                <th class="py-3 pr-4 text-right">Role</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-border text-sm">
                             @foreach (var user in Model.Users)
                             {
+                                var currentRole = user.Role.ToString();
+                                var isSelf = string.Equals(user.Email, User.Identity?.Name, System.StringComparison.OrdinalIgnoreCase);
                                 <tr>
-                                    <td class="py-3 pr-4 font-semibold text-foreground">@user.Name</td>
-                                    <td class="py-3 pr-4 text-neutral-500">@user.Email</td>
                                     <td class="py-3 pr-4">
-                                        <span class="rounded-full px-2.5 py-0.5 text-xs font-bold @(user.Role == UserRole.Admin ? "bg-primary-600/10 text-primary-700" : "bg-neutral-100 text-neutral-500")">@user.Role</span>
+                                        <div class="font-semibold text-foreground">@user.Name</div>
+                                        @if (!isSelf)
+                                        {
+                                            <div class="text-xs text-neutral-400">Joined @user.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</div>
+                                        }
+                                    </td>
+                                    <td class="py-3 pr-4 text-neutral-500">@user.Email</td>
+                                    <td class="py-3 text-right">
+                                        <form asp-action="UpdateRole" method="post" class="inline-flex items-center gap-2">
+                                            <input type="hidden" name="id" value="@user.Id" />
+                                            <select name="role" onchange="this.form.submit()" @(isSelf ? "disabled" : "")
+                                                    class="rounded-full border border-border px-3 py-1.5 text-xs font-semibold outline-none focus:ring-2 focus:ring-primary-500 @(currentRole == "Admin" ? "bg-primary-600/10 text-primary-700" : "bg-neutral-100 text-neutral-600")">
+                                                @foreach (var r in Enum.GetValues<UserRole>())
+                                                {
+                                                    <option value="@r" selected="@(r.ToString() == currentRole)">@r</option>
+                                                }
+                                            </select>
+                                            @if (isSelf)
+                                            {
+                                                <span class="text-xs text-neutral-400 italic">(you)</span>
+                                            }
+                                        </form>
                                     </td>
                                 </tr>
                             }
