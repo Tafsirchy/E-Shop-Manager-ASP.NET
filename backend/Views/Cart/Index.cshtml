@@ -90,28 +90,54 @@
                     </div>
 
                     <div class="mt-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                        <div>
-                            <form class="flex gap-2" data-coupon-form>
-                                <input type="text" name="CouponCode" placeholder="Coupon code" aria-label="Coupon code"
-                                       class="w-48 rounded-full border border-border bg-card px-4 py-2 text-sm placeholder:text-neutral-400 focus:ring-2 focus:ring-primary-500 outline-none transition" />
-                                <button type="button" class="rounded-full border border-border px-5 py-2 text-sm font-semibold hover:border-neutral-400 transition">Apply coupon</button>
-                            </form>
-                            <p data-coupon-hint class="hidden mt-2 text-xs text-neutral-500">
-                                Coupons are redeemed with reward points from your <a asp-controller="Membership" asp-action="Index" class="underline underline-offset-2 hover:text-primary-600">Membership</a> page.
-                            </p>
+                        <div class="w-full sm:max-w-sm">
+                            @if (!string.IsNullOrEmpty(Model.AppliedCouponCode))
+                            {
+                                <div class="flex flex-col gap-2 rounded-xl border border-success-200 bg-success-50 p-3">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <p class="text-sm font-semibold text-success-700">
+                                            Coupon <span class="uppercase">@Model.AppliedCouponCode</span> applied
+                                        </p>
+                                        <form asp-controller="Cart" asp-action="RemoveCoupon" method="post">
+                                            <input type="hidden" name="ReturnUrl" value="@returnUrl" />
+                                            <button type="submit" class="text-xs font-semibold text-neutral-500 underline underline-offset-2 hover:text-danger-500 transition">Remove</button>
+                                        </form>
+                                    </div>
+                                    <p class="text-sm text-success-700">&#2547;@Model.CouponDiscount.ToString("0.##") off your order</p>
+                                </div>
+                            }
+                            else
+                            {
+                                <form asp-controller="Cart" asp-action="ApplyCoupon" method="post" class="flex gap-2" data-coupon-form>
+                                    <input type="hidden" name="ReturnUrl" value="@returnUrl" />
+                                    <input type="text" name="CouponCode" placeholder="Coupon code" aria-label="Coupon code"
+                                           class="w-48 rounded-full border border-border bg-card px-4 py-2 text-sm placeholder:text-neutral-400 focus:ring-2 focus:ring-primary-500 outline-none transition" />
+                                    <button type="submit" class="rounded-full border border-border px-5 py-2 text-sm font-semibold hover:border-neutral-400 transition">Apply coupon</button>
+                                </form>
+                                <p data-coupon-hint class="hidden mt-2 text-xs text-neutral-500">
+                                    Coupons are redeemed with reward points from your <a asp-controller="Membership" asp-action="Index" class="underline underline-offset-2 hover:text-primary-600">Membership</a> page.
+                                </p>
+                            }
                         </div>
                         <button type="button" data-update-cart class="rounded-full border border-border px-6 py-2 text-sm font-semibold hover:border-neutral-400 transition">Update cart</button>
                     </div>
                 </section>
 
                 <aside class="rounded-2xl border border-border bg-card p-6 shadow-sm lg:sticky lg:top-28"
-                       data-cart-totals data-subtotal="@Model.Total.ToString(System.Globalization.CultureInfo.InvariantCulture)" aria-label="Cart totals">
+                       data-cart-totals data-subtotal="@Model.CouponTotal.ToString(System.Globalization.CultureInfo.InvariantCulture)" aria-label="Cart totals">
                     <h2 class="text-lg font-bold text-foreground pb-3 mb-1 border-b border-border">Cart Totals</h2>
 
                     <div class="flex items-center justify-between py-2.5 text-sm">
                         <span class="text-neutral-500">Subtotal</span>
                         <span class="font-semibold">&#2547;@Model.Total.ToString("0.##")</span>
                     </div>
+                    @if (Model.CouponDiscount > 0)
+                    {
+                        <div class="flex items-center justify-between py-2.5 text-sm">
+                            <span class="text-neutral-500">Coupon discount</span>
+                            <span class="font-semibold text-success-600">-&#2547;@Model.CouponDiscount.ToString("0.##")</span>
+                        </div>
+                    }
                     <div class="flex items-center justify-between pb-2.5 text-sm">
                         <span class="text-neutral-500">Shipping</span>
                         <span data-shipping-label class="font-semibold text-success-600">Free</span>
@@ -145,7 +171,7 @@
 
                     <div class="border-t border-border mt-3 pt-5 flex items-center justify-between text-xl font-bold text-foreground">
                         <span>Total</span>
-                        <span data-total-value>&#2547;@Model.Total.ToString("0.##")</span>
+                        <span data-total-value>&#2547;@Model.CouponTotal.ToString("0.##")</span>
                     </div>
 
                     @if (Model.IsSignedIn)
