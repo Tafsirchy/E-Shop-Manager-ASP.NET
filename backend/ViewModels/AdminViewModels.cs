@@ -51,6 +51,17 @@ namespace EShopManager.API.ViewModels
         public List<Product> Products { get; set; } = new();
     }
 
+    public class AdminOrdersViewModel
+    {
+        public List<Order> Orders { get; set; } = new();
+        public string Status { get; set; } = "All";
+    }
+
+    public class AdminCouponsViewModel
+    {
+        public List<Coupon> Coupons { get; set; } = new();
+    }
+
     public class UpdateOrderStatusInput
     {
         public string Id { get; set; } = null!;
