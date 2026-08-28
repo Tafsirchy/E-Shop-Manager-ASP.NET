@@ -37,12 +37,75 @@ namespace EShopManager.API.Controllers
                 rows.Add(new CartItemRow { Item = item, Product = product });
             }
 
+            var subtotal = rows.Sum(r => r.Item.UnitPriceSnapshot * r.Item.Quantity);
+            decimal couponDiscount = 0;
+            string? appliedCode = null;
+
+            if (!string.IsNullOrEmpty(cart?.AppliedCouponCode))
+            {
+                var activeUser = _me.Email;
+                var discount = await _membershipService.ResolveClaimedCouponAsync(activeUser, cart.AppliedCouponCode);
+                if (discount.HasValue)
+                {
+                    appliedCode = cart.AppliedCouponCode;
+                    couponDiscount = Math.Min(discount.Value, subtotal);
+                }
+            }
+
             return View(new CartIndexViewModel
             {
                 Rows = rows,
-                Total = rows.Sum(r => r.Item.UnitPriceSnapshot * r.Item.Quantity),
-                IsSignedIn = _me.IsAuthenticated
+                Total = subtotal,
+                IsSignedIn = _me.IsAuthenticated,
+                AppliedCouponCode = appliedCode,
+                CouponDiscount = couponDiscount,
+                CouponTotal = subtotal - couponDiscount
             });
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApplyCoupon(ApplyCouponInput input)
+        {
+            var code = input.CouponCode?.Trim().ToUpper();
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                TempData["StatusMessage"] = "Please enter a coupon code.";
+                TempData["StatusIsError"] = true;
+                return RedirectToLocal(input.ReturnUrl);
+            }
+
+            var discount = await _membershipService.ResolveClaimedCouponAsync(_me.Email, code);
+            if (!discount.HasValue)
+            {
+                TempData["StatusMessage"] = "This coupon is not active for your account. Claim it from your Membership page first.";
+                TempData["StatusIsError"] = true;
+                return RedirectToLocal(input.ReturnUrl);
+            }
+
+            var result = await _cartService.ApplyCouponAsync(_me.OwnerKey, code, discount.Value);
+            if (!result.Success)
+            {
+                TempData["StatusMessage"] = result.Message ?? "Could not apply coupon.";
+                TempData["StatusIsError"] = true;
+                return RedirectToLocal(input.ReturnUrl);
+            }
+
+            TempData["StatusMessage"] = $"Coupon applied: &#2547;{discount.Value:0.##} off";
+            TempData["StatusIsError"] = false;
+            return RedirectToLocal(input.ReturnUrl);
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveCoupon(string? ReturnUrl)
+        {
+            await _cartService.RemoveCouponAsync(_me.OwnerKey);
+            TempData["StatusMessage"] = "Coupon removed.";
+            TempData["StatusIsError"] = false;
+            return RedirectToLocal(ReturnUrl);
         }
 
         [HttpGet]
@@ -125,10 +188,25 @@ namespace EShopManager.API.Controllers
             order.UserId = owner;
             order.Items = cart.Items;
 
+            string? appliedCoupon = null;
+            if (!string.IsNullOrEmpty(cart.AppliedCouponCode))
+            {
+                appliedCoupon = cart.AppliedCouponCode;
+                order.CouponCode = appliedCoupon;
+                order.CouponDiscountApplied =
+                    await _membershipService.ResolveClaimedCouponAsync(owner, appliedCoupon) ?? 0;
+            }
+
             try
             {
                 // Place the order in the database (defaults to "Pending" status)
                 var placed = await _orderService.PlaceOrderAsync(order);
+
+                // Coupon was successfully redeemed against this order
+                if (!string.IsNullOrEmpty(appliedCoupon))
+                {
+                    await _membershipService.MarkCouponUsedAsync(owner, appliedCoupon);
+                }
 
                 // Setup Stripe Checkout
                 var domain = $"{Request.Scheme}://{Request.Host}";
