@@ -24,6 +24,9 @@ namespace EShopManager.API.Services
         public async Task<List<Order>> GetUserOrdersAsync(string userId) =>
             await _orderCollection.Find(x => x.UserId == userId).ToListAsync();
 
+        public async Task<List<Order>> GetAllOrdersAsync() =>
+            await _orderCollection.Find(Builders<Order>.Filter.Empty).ToListAsync();
+
         public async Task<Order> PlaceOrderAsync(Order order)
         {
             // Prefetch products once: used for category discounts and stock checks
@@ -53,6 +56,14 @@ namespace EShopManager.API.Services
 
             // Order-type-wise discount (Regular / Premium / Bulk override)
             order.ApplyDiscount();
+
+            // Claimed-coupon discount (point-based) applied on top
+            if (order.CouponDiscountApplied > 0)
+            {
+                order.CouponDiscountApplied = Math.Min(order.CouponDiscountApplied, order.TotalAmount);
+                order.TotalAmount -= order.CouponDiscountApplied;
+                order.DiscountApplied += order.CouponDiscountApplied;
+            }
 
             await _orderCollection.InsertOneAsync(order);
 
