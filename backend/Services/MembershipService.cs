@@ -52,13 +52,45 @@ namespace EShopManager.API.Services
             if (coupon == null) return "Coupon code not found";
 
             var mem = await GetMembershipAsync(userId);
+            var alreadyClaimed = mem.ClaimedCoupons.Any(c => c.Code == coupon.Code && c.Status != "Used");
+            if (alreadyClaimed) return "Coupon already claimed";
+
             if (mem.RewardPoints >= coupon.RequiredPoints)
             {
                 mem.RewardPoints -= coupon.RequiredPoints;
+                mem.ClaimedCoupons.Add(new ClaimedCoupon
+                {
+                    Code = coupon.Code,
+                    DiscountValue = coupon.DiscountValue,
+                    RequiredPoints = coupon.RequiredPoints,
+                    ClaimedAt = DateTime.UtcNow,
+                    Status = "Active"
+                });
                 await _membershipCollection.ReplaceOneAsync(x => x.Id == mem.Id, mem);
                 return null;
             }
             return "Insufficient reward points for this coupon";
+        }
+
+        // Returns the discount for a claimed (active) coupon belonging to the user, or null if it
+        // hasn't been claimed / is no longer active.
+        public async Task<decimal?> ResolveClaimedCouponAsync(string userId, string couponCode)
+        {
+            var mem = await GetMembershipAsync(userId);
+            var claimed = mem.ClaimedCoupons.FirstOrDefault(c =>
+                c.Code == couponCode && c.Status == "Active");
+            return claimed?.DiscountValue;
+        }
+
+        // Marks a claimed coupon as used (consumed) once it is redeemed against an order.
+        public async Task MarkCouponUsedAsync(string userId, string couponCode)
+        {
+            var mem = await GetMembershipAsync(userId);
+            var claimed = mem.ClaimedCoupons.FirstOrDefault(c =>
+                c.Code == couponCode && c.Status == "Active");
+            if (claimed == null) return;
+            claimed.Status = "Used";
+            await _membershipCollection.ReplaceOneAsync(x => x.Id == mem.Id, mem);
         }
         
         // Admin method to create coupons
@@ -66,5 +98,17 @@ namespace EShopManager.API.Services
         {
             await _couponCollection.InsertOneAsync(coupon);
         }
+
+        public async Task<List<Coupon>> GetAllCouponsAsync() =>
+            await _couponCollection.Find(Builders<Coupon>.Filter.Empty).ToListAsync();
+
+        public async Task<Coupon?> GetCouponAsync(string id) =>
+            await _couponCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
+
+        public async Task UpdateCouponAsync(Coupon coupon) =>
+            await _couponCollection.ReplaceOneAsync(x => x.Id == coupon.Id, coupon);
+
+        public async Task DeleteCouponAsync(string id) =>
+            await _couponCollection.DeleteOneAsync(x => x.Id == id);
     }
 }
