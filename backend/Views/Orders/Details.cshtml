@@ -138,7 +138,7 @@
                         {
                             <div class="px-6 sm:px-8 py-4 flex items-center justify-between gap-4">
                                 <div class="min-w-0">
-                                    <a asp-controller="Products" asp-action="Details" asp-route-id="@item.ProductId" class="font-semibold text-foreground hover:text-primary-600 transition text-sm sm:text-base truncate block">@(item.ProductName ?? item.ProductId)</a>
+                                    <a asp-controller="Products" asp-action="Details" asp-route-id="@item.ProductId" class="font-semibold text-foreground hover:text-primary-600 transition text-sm sm:text-base truncate block">@(item.ProductName ?? $"Product {item.ProductId}")</a>
                                     <p class="text-xs sm:text-sm text-neutral-400 mt-0.5">&#2547;@item.UnitPriceSnapshot.ToString("0.##") &times; @item.Quantity</p>
                                 </div>
                                 <span class="font-semibold text-foreground text-sm sm:text-base whitespace-nowrap">&#2547;@((item.UnitPriceSnapshot * item.Quantity).ToString("0.##"))</span>
@@ -160,7 +160,7 @@
                         @if (order.DiscountApplied > 0)
                         {
                             <div class="flex justify-between text-sm">
-                                <span class="text-success-600">@Model.Order switch { PremiumOrder => "Premium", BulkOrder => "Bulk", _ => "Order-type" } discount</span>
+                                <span class="text-success-600">@(Model.Order switch { PremiumOrder => "Premium", BulkOrder => "Bulk", _ => "Order-type" }) discount</span>
                                 <span class="text-success-600">-&#2547;@order.DiscountApplied.ToString("0.##")</span>
                             </div>
                         }
@@ -183,7 +183,7 @@
                                 <label for="Status" class="block text-sm font-medium text-foreground mb-1.5">Status</label>
                                 <select name="Status" id="Status"
                                         class="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
-                                    @foreach (var s in new[] { "Pending", "Processing", "Shipped", "Delivered", "Cancelled" })
+                                    @foreach (var s in new[] { "Pending", "Processing", "In Transit", "Shipped", "Delivered", "Cancelled" })
                                     {
                                         <option value="@s" selected="@(s == order.Status)">@s</option>
                                     }
