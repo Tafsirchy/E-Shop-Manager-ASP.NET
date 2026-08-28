@@ -13,6 +13,15 @@ namespace EShopManager.API.ViewModels
         public List<CartItemRow> Rows { get; set; } = new();
         public decimal Total { get; set; }
         public bool IsSignedIn { get; set; }
+        public string? AppliedCouponCode { get; set; }
+        public decimal CouponDiscount { get; set; }
+        public decimal CouponTotal { get; set; }
+    }
+
+    public class ApplyCouponInput
+    {
+        public string? CouponCode { get; set; }
+        public string? ReturnUrl { get; set; }
     }
 
     public class AddToCartInput
