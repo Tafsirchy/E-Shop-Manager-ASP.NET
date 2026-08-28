@@ -27,6 +27,17 @@ namespace EShopManager.API.Services
         public async Task CreatePackageAsync(SubscriptionPackage package) =>
             await _packageCollection.InsertOneAsync(package);
 
+        public async Task UpdatePackageAsync(SubscriptionPackage package) =>
+            await _packageCollection.ReplaceOneAsync(x => x.Id == package.Id, package);
+
+        public async Task TogglePackageActiveAsync(string id, bool isActive) =>
+            await _packageCollection.UpdateOneAsync(
+                x => x.Id == id,
+                Builders<SubscriptionPackage>.Update.Set(p => p.IsActive, isActive));
+
+        public async Task DeletePackageAsync(string id) =>
+            await _packageCollection.DeleteOneAsync(x => x.Id == id);
+
         // Custom Package Builder Logic
         // The discount threshold is based on the user's verified lifetime spend,
         // never on client-supplied input.
