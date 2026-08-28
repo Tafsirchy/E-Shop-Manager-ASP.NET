@@ -349,12 +349,14 @@
 
         var couponForm = document.querySelector('[data-coupon-form]');
         if (couponForm) {
-            couponForm.addEventListener('submit', function (e) { e.preventDefault(); });
-            var applyBtn = couponForm.querySelector('button');
-            var hint = document.querySelector('[data-coupon-hint]');
-            if (applyBtn && hint) {
-                applyBtn.addEventListener('click', function () { hint.classList.remove('hidden'); });
-            }
+            couponForm.addEventListener('submit', function (e) {
+                var input = couponForm.querySelector('input[name="CouponCode"]');
+                var hint = document.querySelector('[data-coupon-hint]');
+                if (input && hint && !input.value.trim()) {
+                    e.preventDefault();
+                    hint.classList.remove('hidden');
+                }
+            });
         }
 
         var updateBtn = document.querySelector('[data-update-cart]');
@@ -368,7 +370,10 @@
         if (!nav) return;
 
         var THRESHOLD = 80;
+        var IDLE_MS = 1500;
+        var isHome = location.pathname === '/' || location.pathname === '/Home';
         var hoverLocked = false;
+        var idleTimer = null;
 
         function showNav() {
             nav.classList.remove('-translate-y-full');
@@ -380,18 +385,28 @@
             nav.classList.add('-translate-y-full');
         }
 
+        function atTop() {
+            return (window.scrollY || window.pageYOffset) <= THRESHOLD;
+        }
+
+        function hideIfAllowed() {
+            if (!isHome) return;      // only auto-hide on homepage sections
+            if (atTop() || hoverLocked) return;
+            hideNav();
+        }
+
         function onScroll() {
-            var y = window.scrollY || window.pageYOffset;
             if (hoverLocked) return;
-            if (y > THRESHOLD) {
-                showNav();
-            } else {
-                hideNav();
-            }
+            showNav();
+
+            // When scrolling stops, hide the navbar (homepage only)
+            if (idleTimer) clearTimeout(idleTimer);
+            idleTimer = setTimeout(hideIfAllowed, IDLE_MS);
         }
 
         window.addEventListener('scroll', onScroll, { passive: true });
-        onScroll();
+        showNav();
+        if (idleTimer) clearTimeout(idleTimer);
 
         var hoverZone = document.createElement('div');
         hoverZone.className = 'fixed top-0 left-0 right-0 h-2 z-40';
@@ -401,14 +416,18 @@
         hoverZone.addEventListener('mouseenter', function () {
             hoverLocked = true;
             showNav();
+            if (idleTimer) clearTimeout(idleTimer);
+        });
+
+        nav.addEventListener('mouseenter', function () {
+            hoverLocked = true;
+            showNav();
+            if (idleTimer) clearTimeout(idleTimer);
         });
 
         nav.addEventListener('mouseleave', function () {
             hoverLocked = false;
-            var y = window.scrollY || window.pageYOffset;
-            if (y <= THRESHOLD) {
-                hideNav();
-            }
+            idleTimer = setTimeout(hideIfAllowed, IDLE_MS);
         });
     }
 
