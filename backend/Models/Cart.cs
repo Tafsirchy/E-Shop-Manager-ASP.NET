@@ -10,6 +10,7 @@ namespace EShopManager.API.Models
         public string? Id { get; set; }
         public string UserId { get; set; } = null!;
         public List<CartItem> Items { get; set; } = new();
+        public string? AppliedCouponCode { get; set; }
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         // optimistic concurrency version
         public int Version { get; set; } = 1;
