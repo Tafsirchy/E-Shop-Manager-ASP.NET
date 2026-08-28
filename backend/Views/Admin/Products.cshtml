@@ -2,13 +2,12 @@
 @{
     ViewData["Title"] = "Manage Products";
 }
-<main class="min-h-screen p-8 bg-background">
+<main class="min-h-screen">
     <div class="max-w-6xl mx-auto">
         <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
-            <h1 class="text-3xl font-bold text-foreground">Manage Products</h1>
+            <h1 class="text-2xl font-bold text-foreground">Manage Products</h1>
             <div class="flex gap-2">
                 <a asp-controller="Products" asp-action="Create" class="rounded-full bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 transition">+ New Product</a>
-                <a asp-action="Index" class="rounded-full border border-border px-5 py-2.5 text-sm font-semibold hover:border-neutral-400 transition">Back to Dashboard</a>
             </div>
         </div>
 
