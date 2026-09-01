@@ -217,31 +217,34 @@
                 var original = btn.textContent;
                 btn.disabled = true;
                 btn.textContent = 'Generating\u2026';
-                var clone = document.getElementById('invoice-card').cloneNode(true);
-                clone.id = 'invoice-clone';
-                clone.style.position = 'fixed';
-                clone.style.top = '0';
-                clone.style.left = '0';
-                clone.style.zIndex = '-1';
-                clone.style.width = document.getElementById('invoice-card').getBoundingClientRect().width + 'px';
-                clone.style.borderRadius = '0';
-                clone.style.boxShadow = 'none';
-                document.body.appendChild(clone);
-                walk(clone);
+
+                function normalizeInClone(clonedDoc) {
+                    var card = clonedDoc.getElementById('invoice-card');
+                    if (card) {
+                        card.style.borderRadius = '0';
+                        card.style.boxShadow = 'none';
+                        walk(card);
+                    }
+                }
 
                 html2pdf().set({
                     margin: 10,
                     filename: 'Invoice-' + '@Model.Order.Id' + '.pdf',
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 },
+                    html2canvas: {
+                        scale: 2,
+                        useCORS: true,
+                        backgroundColor: '#ffffff',
+                        onclone: normalizeInClone,
+                        windowWidth: document.documentElement.scrollWidth,
+                        windowHeight: document.documentElement.scrollHeight
+                    },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
                     pagebreak: { mode: ['css', 'legacy'] }
-                }).from(clone).save().then(function () {
-                    clone.remove();
+                }).from(document.getElementById('invoice-card')).save().then(function () {
                     btn.disabled = false;
                     btn.textContent = original;
                 }).catch(function (err) {
-                    clone.remove();
                     console.error('PDF generation failed:', err);
                     alert('Could not generate the PDF. Please try the print option instead.');
                     btn.disabled = false;
