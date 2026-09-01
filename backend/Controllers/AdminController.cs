@@ -18,10 +18,11 @@ namespace EShopManager.API.Controllers
         private readonly SubscriptionService _subscriptionService;
         private readonly MembershipService _membershipService;
         private readonly OrderService _orderService;
+        private readonly EmailService _emailService;
 
         public AdminController(AdminAnalyticsService analyticsService, ProductService productService,
             UserService userService, SubscriptionService subscriptionService, MembershipService membershipService,
-            OrderService orderService)
+            OrderService orderService, EmailService emailService)
         {
             _analyticsService = analyticsService;
             _productService = productService;
@@ -29,6 +30,7 @@ namespace EShopManager.API.Controllers
             _subscriptionService = subscriptionService;
             _membershipService = membershipService;
             _orderService = orderService;
+            _emailService = emailService;
         }
 
         public async Task<IActionResult> Index()
@@ -124,6 +126,17 @@ namespace EShopManager.API.Controllers
             await _orderService.UpdateOrderStatusAsync(id, status, note);
             if (!string.IsNullOrWhiteSpace(trackingNumber))
                 await _orderService.SetTrackingNumberAsync(id, trackingNumber.Trim());
+
+            // Notify the customer by email when their order is marked Delivered.
+            if (string.Equals(status, "Delivered", StringComparison.OrdinalIgnoreCase))
+            {
+                var user = await _userService.GetByEmailAsync(order.UserId);
+                if (user != null)
+                {
+                    _emailService.SendDeliveredAsync(
+                        user.Email, user.Name, order.Id ?? id, trackingNumber ?? order.TrackingNumber);
+                }
+            }
 
             TempData["StatusMessage"] = $"Order #{id[..Math.Min(8, id.Length)]} updated to {status}.";
             return RedirectToAction(nameof(Orders));
