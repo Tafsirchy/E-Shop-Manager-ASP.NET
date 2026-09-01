@@ -16,15 +16,17 @@ namespace EShopManager.API.Controllers
         private readonly ProductService _productService;
         private readonly UserService _userService;
         private readonly EmailService _emailService;
+        private readonly PdfService _pdfService;
         private readonly CurrentUser _me;
 
         public OrdersController(OrderService orderService, ProductService productService,
-            UserService userService, EmailService emailService, CurrentUser me)
+            UserService userService, EmailService emailService, PdfService pdfService, CurrentUser me)
         {
             _orderService = orderService;
             _productService = productService;
             _userService = userService;
             _emailService = emailService;
+            _pdfService = pdfService;
             _me = me;
         }
 
@@ -80,19 +82,35 @@ namespace EShopManager.API.Controllers
 
         public async Task<IActionResult> Invoice(string id)
         {
-            var order = await _orderService.GetOrderAsync(id);
-            if (!CanAccess(order))
+            var result = await LoadInvoiceAsync(id);
+
+            if (result.Accessible == false)
                 return NotFound();
 
-            // Invoices are available once payment is cleared and the order has moved
-            // past "Pending" (i.e. "Processing" or later). Pending and Cancelled orders
-            // are not downloadable yet.
-            if (order!.Status == "Pending" || order.Status == "Cancelled")
+            // Pending and Cancelled orders can't be viewed/downloaded yet.
+            if (result.Downloadable == false)
             {
                 TempData["StatusMessage"] = "The invoice becomes downloadable once your payment is confirmed and the order is being processed.";
                 TempData["StatusIsError"] = true;
-                return RedirectToAction(nameof(Details), new { id = order.Id });
+                return RedirectToAction(nameof(Details), new { id });
             }
+
+            return View(result.Model);
+        }
+
+        // Loads the invoice data for the given order and reports whether the order
+        // is accessible (owned by the current user or admin) and downloadable
+        // (payment cleared, status Processing or later).
+        private async Task<(InvoiceViewModel? Model, bool Accessible, bool Downloadable)> LoadInvoiceAsync(string id)
+        {
+            var order = await _orderService.GetOrderAsync(id);
+            if (!CanAccess(order))
+                return (null, false, false);
+
+            // Invoices are available once payment is cleared and the order has
+            // moved past "Pending" (i.e. "Processing" or later).
+            if (order!.Status == "Pending" || order.Status == "Cancelled")
+                return (null, true, false);
 
             var customer = await _userService.GetByEmailAsync(order.UserId);
 
@@ -110,13 +128,35 @@ namespace EShopManager.API.Controllers
                 });
             }
 
-            return View(new InvoiceViewModel
+            var model = new InvoiceViewModel
             {
                 Order = order,
                 CustomerName = customer?.Name ?? order.UserId,
                 CustomerEmail = customer?.Email ?? order.UserId,
                 Lines = lines
-            });
+            };
+
+            return (model, true, true);
+        }
+
+        // Generates and returns the invoice as a downloadable PDF file.
+        public async Task<IActionResult> InvoicePdf(string id)
+        {
+            var result = await LoadInvoiceAsync(id);
+            if (result.Downloadable != true)
+                return NotFound();
+
+            var html = InvoicePdfHtml.Build(result.Model!);
+            var bytes = await _pdfService.RenderAsync(html, "invoice");
+            if (bytes == null)
+            {
+                TempData["StatusMessage"] = "Could not generate the invoice PDF. Please try again.";
+                TempData["StatusIsError"] = true;
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            var fileName = $"Invoice-{id}.pdf";
+            return File(bytes, "application/pdf", fileName);
         }
 
         [Authorize(Roles = "Admin")]

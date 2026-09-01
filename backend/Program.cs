@@ -101,6 +101,7 @@ if (mongoDbSettings != null)
     builder.Services.AddScoped<EShopManager.API.Services.MembershipService>();
     builder.Services.AddScoped<EShopManager.API.Services.AdminAnalyticsService>();
     builder.Services.AddScoped<EShopManager.API.Services.EmailService>();
+    builder.Services.AddScoped<EShopManager.API.Services.PdfService>();
 }
 
 builder.Services.AddScoped<CurrentUser>();
