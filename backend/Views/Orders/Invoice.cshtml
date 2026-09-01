@@ -13,13 +13,13 @@
         <div class="flex items-center justify-between mb-6 print:hidden">
             <a asp-controller="Orders" asp-action="Details" asp-route-id="@Model.Order.Id"
                class="text-primary-600 hover:text-primary-700 font-medium">&larr; Back to order</a>
-            <button onclick="window.print()"
+            <button type="button" id="download-pdf-btn"
                     class="rounded-full bg-primary-600 px-6 py-2 font-semibold text-white hover:bg-primary-700 transition">
                 Download PDF
             </button>
         </div>
 
-        <div class="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+        <div id="invoice-card" class="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
             <div class="bg-neutral-950 text-white p-8 flex items-start justify-between">
                 <div>
                     <p class="text-2xl font-bold tracking-tight">E&#8209;Shop Manager</p>
@@ -109,11 +109,43 @@
 </main>
 
 @section Scripts {
+    <script src="~/lib/html2pdf.js/html2pdf.bundle.min.js" asp-append-version="true"></script>
     <style>
         @@media print {
             body * { visibility: hidden; }
-            .rounded-2xl, .rounded-2xl * { visibility: visible; }
-            .rounded-2xl { position: absolute; inset: 0 auto auto 0; width: 100%; border-radius: 0 !important; box-shadow: none !important; }
+            #invoice-card, #invoice-card * { visibility: visible; }
+            #invoice-card { position: absolute; inset: 0 auto auto 0; width: 100%; border-radius: 0 !important; box-shadow: none !important; }
         }
     </style>
+    <script>
+        (function () {
+            const btn = document.getElementById('download-pdf-btn');
+            if (!btn || typeof html2pdf === 'undefined') return;
+
+            btn.addEventListener('click', async function () {
+                const original = this.textContent;
+                try {
+                    this.disabled = true;
+                    this.textContent = 'Generating\u2026';
+                    const orderId = '@Model.Order.Id';
+                    const filename = 'Invoice-' + orderId + '.pdf';
+
+                    await html2pdf().set({
+                        margin: 10,
+                        filename: filename,
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                        pagebreak: { mode: ['css', 'legacy'] }
+                    }).from(document.getElementById('invoice-card')).save();
+                } catch (err) {
+                    console.error('PDF generation failed:', err);
+                    alert('Could not generate the PDF. Please try the print option instead.');
+                } finally {
+                    this.disabled = false;
+                    this.textContent = original;
+                }
+            });
+        })();
+    </script>
 }
