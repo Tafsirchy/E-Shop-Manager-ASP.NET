@@ -62,7 +62,6 @@ A full-featured e-commerce platform built with ASP.NET Core 10 MVC, MongoDB, Str
 | **CSS** | Tailwind CSS v4 (custom @theme tokens) |
 | **JavaScript** | Vanilla JS (site.js, home.js, product-form.js), jQuery 4 (validation) |
 | **Logging** | Serilog (Console + rolling daily file) |
-| **Testing** | xUnit + EphemeralMongo (in-process MongoDB) |
 | **Build** | .NET CLI, npm (Tailwind CLI) |
 
 ---
@@ -122,17 +121,7 @@ E-Shop/
 │   │   └── DatabaseSeeder.cs          # Seed admin, products, backfill migrations
 │   ├── Program.cs                       # Middleware pipeline, DI, OutputCache
 │   ├── tailwind.input.css              # Tailwind v4 theme + custom utilities
-│   ├── wwwroot/                        # Static assets (CSS, JS, images)
-│   └── start.ps1                       # Launcher (injects env vars)
-│
-├── backend.Tests/            # 7 test files
-│   ├── CartServiceTests.cs
-│   ├── CategoryDiscountTests.cs
-│   ├── CheckoutFlowTests.cs
-│   ├── GuardConventionTests.cs        # Architecture guard (mutating endpoints need auth)
-│   ├── MergeHelperTests.cs
-│   ├── ReviewAggregationHelperTests.cs
-│   └── SecurityStampTests.cs
+│   └── wwwroot/                        # Static assets (CSS, JS, images)
 │
 └── README.md
 ```
@@ -188,13 +177,10 @@ npm install
 npm run build:css
 
 # Build and run
-dotnet build
-.\start.ps1
+dotnet run
 ```
 
 The app runs at **http://localhost:5000**.
-
-`start.ps1` automatically injects environment variables and launches the server.
 
 ### 3. Tailwind CSS (Development)
 
@@ -205,15 +191,6 @@ npm run watch:css
 # One-shot build (minified)
 npm run build:css
 ```
-
-### 4. Run Tests
-
-```bash
-cd backend
-dotnet test ../backend.Tests/Backend.Tests.csproj
-```
-
-**28 tests** covering cart operations, category discounts, checkout flow, merge logic, review aggregation, security stamps, and architecture conventions.
 
 ---
 
