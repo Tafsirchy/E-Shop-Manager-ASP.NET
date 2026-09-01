@@ -119,32 +119,134 @@
     </style>
     <script>
         (function () {
-            const btn = document.getElementById('download-pdf-btn');
+            var btn = document.getElementById('download-pdf-btn');
             if (!btn || typeof html2pdf === 'undefined') return;
 
-            btn.addEventListener('click', async function () {
-                const original = this.textContent;
-                try {
-                    this.disabled = true;
-                    this.textContent = 'Generating\u2026';
-                    const orderId = '@Model.Order.Id';
-                    const filename = 'Invoice-' + orderId + '.pdf';
+            function parseNum(s) {
+                s = String(s).trim();
+                var isPct = s.indexOf('%') !== -1;
+                var n = parseFloat(s);
+                if (isNaN(n)) return 0;
+                return isPct ? n / 100 : n;
+            }
 
-                    await html2pdf().set({
-                        margin: 10,
-                        filename: filename,
-                        image: { type: 'jpeg', quality: 0.98 },
-                        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                        pagebreak: { mode: ['css', 'legacy'] }
-                    }).from(document.getElementById('invoice-card')).save();
-                } catch (err) {
+            function to255(c) { return Math.max(0, Math.min(255, Math.round(c * 255))); }
+
+            function clr(r, g, b, a) {
+                return a >= 1
+                    ? 'rgb(' + r + ', ' + g + ', ' + b + ')'
+                    : 'rgba(' + r + ', ' + g + ', ' + b + ', ' + a + ')';
+            }
+
+            function oklabToRgb(L, a, b, alpha) {
+                var l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+                var m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+                var s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+                var l = l_ * l_ * l_, m = m_ * m_ * m_, s = s_ * s_ * s_;
+                var r = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+                var g = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+                var bl = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
+                var enc = function (c) {
+                    c = c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+                    return to255(c);
+                };
+                return clr(enc(r), enc(g), enc(bl), alpha);
+            }
+
+            function splitArgs(inner) {
+                var parts = inner.trim().split(/\s+/);
+                var nums = [], alpha = 1, slash = false;
+                for (var i = 0; i < parts.length; i++) {
+                    var p = parts[i];
+                    if (p === '/') { slash = true; continue; }
+                    if (/[0-9]/.test(p)) {
+                        if (slash) alpha = parseNum(p);
+                        else if (nums.length < 3) nums.push(parseNum(p));
+                    }
+                }
+                return { nums: nums, alpha: alpha };
+            }
+
+            function convert(str) {
+                if (!str) return str;
+                str = str.replace(/oklch\s*\(([^)]*)\)/gi, function (m, inner) {
+                    var x = splitArgs(inner);
+                    var C = x.nums[1] || 0, H = x.nums[2] || 0;
+                    var a = C * Math.cos(H * Math.PI / 180);
+                    var b = C * Math.sin(H * Math.PI / 180);
+                    return oklabToRgb(x.nums[0] || 0, a, b, x.alpha);
+                });
+                str = str.replace(/oklab\s*\(([^)]*)\)/gi, function (m, inner) {
+                    var x = splitArgs(inner);
+                    return oklabToRgb(x.nums[0] || 0, x.nums[1] || 0, x.nums[2] || 0, x.alpha);
+                });
+                str = str.replace(/color\(\s*srgb\s+([^)]*)\)/gi, function (m, inner) {
+                    var x = splitArgs(inner);
+                    return clr(to255(x.nums[0] || 0), to255(x.nums[1] || 0), to255(x.nums[2] || 0), x.alpha);
+                });
+                return str;
+            }
+
+            var PROPS = [
+                ['color', 'color'],
+                ['backgroundColor', 'background-color'],
+                ['borderTopColor', 'border-top-color'],
+                ['borderRightColor', 'border-right-color'],
+                ['borderBottomColor', 'border-bottom-color'],
+                ['borderLeftColor', 'border-left-color'],
+                ['outlineColor', 'outline-color'],
+                ['textDecorationColor', 'text-decoration-color'],
+                ['caretColor', 'caret-color'],
+                ['columnRuleColor', 'column-rule-color'],
+                ['boxShadow', 'box-shadow'],
+                ['textShadow', 'text-shadow'],
+                ['fill', 'fill'],
+                ['stroke', 'stroke']
+            ];
+
+            function walk(el) {
+                PROPS.forEach(function (p) {
+                    var raw = window.getComputedStyle(el).getPropertyValue(p[1]);
+                    var c = convert(raw);
+                    if (c !== raw) { try { el.style[p[0]] = c; } catch (e) { } }
+                });
+                for (var i = 0; i < el.children.length; i++) walk(el.children[i]);
+            }
+
+            btn.addEventListener('click', function () {
+                var original = btn.textContent;
+                btn.disabled = true;
+                btn.textContent = 'Generating\u2026';
+                var clone = document.getElementById('invoice-card').cloneNode(true);
+                clone.id = 'invoice-clone';
+                clone.style.position = 'fixed';
+                clone.style.top = '0';
+                clone.style.left = '0';
+                clone.style.zIndex = '-1';
+                clone.style.width = document.getElementById('invoice-card').getBoundingClientRect().width + 'px';
+                clone.style.borderRadius = '0';
+                clone.style.boxShadow = 'none';
+                document.body.appendChild(clone);
+                walk(clone);
+
+                html2pdf().set({
+                    margin: 10,
+                    filename: 'Invoice-' + '@Model.Order.Id' + '.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak: { mode: ['css', 'legacy'] }
+                }).from(clone).save().then(function () {
+                    clone.remove();
+                    btn.disabled = false;
+                    btn.textContent = original;
+                }).catch(function (err) {
+                    clone.remove();
                     console.error('PDF generation failed:', err);
                     alert('Could not generate the PDF. Please try the print option instead.');
-                } finally {
-                    this.disabled = false;
-                    this.textContent = original;
-                }
+                    btn.disabled = false;
+                    btn.textContent = original;
+                });
             });
         })();
     </script>
