@@ -13,10 +13,10 @@
         <div class="flex items-center justify-between mb-6 print:hidden">
             <a asp-controller="Orders" asp-action="Details" asp-route-id="@Model.Order.Id"
                class="text-primary-600 hover:text-primary-700 font-medium">&larr; Back to order</a>
-            <button type="button" id="download-pdf-btn"
-                    class="rounded-full bg-primary-600 px-6 py-2 font-semibold text-white hover:bg-primary-700 transition">
+            <a asp-controller="Orders" asp-action="InvoicePdf" asp-route-id="@Model.Order.Id" target="_blank"
+               class="inline-flex items-center rounded-full bg-primary-600 px-6 py-2 font-semibold text-white hover:bg-primary-700 transition">
                 Download PDF
-            </button>
+            </a>
         </div>
 
         <div id="invoice-card" class="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
@@ -109,7 +109,6 @@
 </main>
 
 @section Scripts {
-    <script src="~/lib/html2pdf.js/html2pdf.bundle.min.js" asp-append-version="true"></script>
     <style>
         @@media print {
             body * { visibility: hidden; }
@@ -117,148 +116,4 @@
             #invoice-card { position: absolute; inset: 0 auto auto 0; width: 100%; border-radius: 0 !important; box-shadow: none !important; }
         }
     </style>
-    <script>
-        (function () {
-            var btn = document.getElementById('download-pdf-btn');
-            if (!btn || typeof html2pdf === 'undefined') return;
-
-            function parseNum(s) {
-                s = String(s).trim();
-                var isPct = s.indexOf('%') !== -1;
-                var n = parseFloat(s);
-                if (isNaN(n)) return 0;
-                return isPct ? n / 100 : n;
-            }
-
-            function to255(c) { return Math.max(0, Math.min(255, Math.round(c * 255))); }
-
-            function clr(r, g, b, a) {
-                return a >= 1
-                    ? 'rgb(' + r + ', ' + g + ', ' + b + ')'
-                    : 'rgba(' + r + ', ' + g + ', ' + b + ', ' + a + ')';
-            }
-
-            function oklabToRgb(L, a, b, alpha) {
-                var l_ = L + 0.3963377774 * a + 0.2158037573 * b;
-                var m_ = L - 0.1055613458 * a - 0.0638541728 * b;
-                var s_ = L - 0.0894841775 * a - 1.2914855480 * b;
-                var l = l_ * l_ * l_, m = m_ * m_ * m_, s = s_ * s_ * s_;
-                var r = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
-                var g = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
-                var bl = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
-                var enc = function (c) {
-                    c = c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
-                    return to255(c);
-                };
-                return clr(enc(r), enc(g), enc(bl), alpha);
-            }
-
-            function splitArgs(inner) {
-                var parts = inner.trim().split(/\s+/);
-                var nums = [], alpha = 1, slash = false;
-                for (var i = 0; i < parts.length; i++) {
-                    var p = parts[i];
-                    if (p === '/') { slash = true; continue; }
-                    if (/[0-9]/.test(p)) {
-                        if (slash) alpha = parseNum(p);
-                        else if (nums.length < 3) nums.push(parseNum(p));
-                    }
-                }
-                return { nums: nums, alpha: alpha };
-            }
-
-            function convert(str) {
-                if (!str) return str;
-                str = str.replace(/oklch\s*\(([^)]*)\)/gi, function (m, inner) {
-                    var x = splitArgs(inner);
-                    var C = x.nums[1] || 0, H = x.nums[2] || 0;
-                    var a = C * Math.cos(H * Math.PI / 180);
-                    var b = C * Math.sin(H * Math.PI / 180);
-                    return oklabToRgb(x.nums[0] || 0, a, b, x.alpha);
-                });
-                str = str.replace(/oklab\s*\(([^)]*)\)/gi, function (m, inner) {
-                    var x = splitArgs(inner);
-                    return oklabToRgb(x.nums[0] || 0, x.nums[1] || 0, x.nums[2] || 0, x.alpha);
-                });
-                str = str.replace(/color\(\s*srgb\s+([^)]*)\)/gi, function (m, inner) {
-                    var x = splitArgs(inner);
-                    return clr(to255(x.nums[0] || 0), to255(x.nums[1] || 0), to255(x.nums[2] || 0), x.alpha);
-                });
-                return str;
-            }
-
-            var PROPS = [
-                ['color', 'color'],
-                ['backgroundColor', 'background-color'],
-                ['borderTopColor', 'border-top-color'],
-                ['borderRightColor', 'border-right-color'],
-                ['borderBottomColor', 'border-bottom-color'],
-                ['borderLeftColor', 'border-left-color'],
-                ['outlineColor', 'outline-color'],
-                ['textDecorationColor', 'text-decoration-color'],
-                ['caretColor', 'caret-color'],
-                ['columnRuleColor', 'column-rule-color'],
-                ['boxShadow', 'box-shadow'],
-                ['textShadow', 'text-shadow'],
-                ['fill', 'fill'],
-                ['stroke', 'stroke']
-            ];
-
-            function normalizeInPlace(el, changed) {
-                PROPS.forEach(function (p) {
-                    var raw = window.getComputedStyle(el).getPropertyValue(p[1]);
-                    var c = convert(raw);
-                    if (c !== raw) {
-                        var prop = p[0];
-                        var prev = el.style.getPropertyValue(prop);
-                        el.style.setProperty(prop, c);
-                        changed.push({ el: el, prop: prop, prev: prev });
-                    }
-                });
-                for (var i = 0; i < el.children.length; i++) normalizeInPlace(el.children[i], changed);
-            }
-
-            function restoreInPlace(changed) {
-                for (var i = 0; i < changed.length; i++) {
-                    var it = changed[i];
-                    if (it.prev) it.el.style.setProperty(it.prop, it.prev);
-                    else it.el.style.removeProperty(it.prop);
-                }
-            }
-
-            btn.addEventListener('click', function () {
-                var card = document.getElementById('invoice-card');
-                var original = btn.textContent;
-                var changed = [];
-                btn.disabled = true;
-                btn.textContent = 'Generating\u2026';
-                var edge = { borderRadius: card.style.borderRadius, boxShadow: card.style.boxShadow };
-                card.style.borderRadius = '0';
-                card.style.boxShadow = 'none';
-                normalizeInPlace(card, changed);
-
-                html2pdf().set({
-                    margin: 10,
-                    filename: 'Invoice-' + '@Model.Order.Id' + '.pdf',
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                }).from(card).save().then(function () {
-                    restoreInPlace(changed);
-                    card.style.borderRadius = edge.borderRadius;
-                    card.style.boxShadow = edge.boxShadow;
-                    btn.disabled = false;
-                    btn.textContent = original;
-                }).catch(function (err) {
-                    restoreInPlace(changed);
-                    card.style.borderRadius = edge.borderRadius;
-                    card.style.boxShadow = edge.boxShadow;
-                    console.error('PDF generation failed:', err);
-                    alert('Error: ' + (err && err.message ? err.message : err));
-                    btn.disabled = false;
-                    btn.textContent = original;
-                });
-            });
-        })();
-    </script>
 }
