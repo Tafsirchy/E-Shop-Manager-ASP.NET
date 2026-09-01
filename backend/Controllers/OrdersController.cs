@@ -15,14 +15,16 @@ namespace EShopManager.API.Controllers
         private readonly OrderService _orderService;
         private readonly ProductService _productService;
         private readonly UserService _userService;
+        private readonly EmailService _emailService;
         private readonly CurrentUser _me;
 
         public OrdersController(OrderService orderService, ProductService productService,
-            UserService userService, CurrentUser me)
+            UserService userService, EmailService emailService, CurrentUser me)
         {
             _orderService = orderService;
             _productService = productService;
             _userService = userService;
+            _emailService = emailService;
             _me = me;
         }
 
@@ -82,7 +84,17 @@ namespace EShopManager.API.Controllers
             if (!CanAccess(order))
                 return NotFound();
 
-            var customer = await _userService.GetByEmailAsync(order!.UserId);
+            // Invoices are available once payment is cleared and the order has moved
+            // past "Pending" (i.e. "Processing" or later). Pending and Cancelled orders
+            // are not downloadable yet.
+            if (order!.Status == "Pending" || order.Status == "Cancelled")
+            {
+                TempData["StatusMessage"] = "The invoice becomes downloadable once your payment is confirmed and the order is being processed.";
+                TempData["StatusIsError"] = true;
+                return RedirectToAction(nameof(Details), new { id = order.Id });
+            }
+
+            var customer = await _userService.GetByEmailAsync(order.UserId);
 
             var lines = new List<InvoiceLine>();
             foreach (var item in order.Items)
@@ -126,6 +138,17 @@ namespace EShopManager.API.Controllers
 
             if (!string.IsNullOrWhiteSpace(input.TrackingNumber))
                 await _orderService.SetTrackingNumberAsync(input.Id, input.TrackingNumber.Trim());
+
+            // Notify the customer when their order is marked Delivered.
+            if (string.Equals(input.Status, "Delivered", StringComparison.OrdinalIgnoreCase))
+            {
+                var user = await _userService.GetByEmailAsync(order.UserId);
+                if (user != null)
+                {
+                    _emailService.SendDeliveredAsync(
+                        user.Email, user.Name, order.Id ?? input.Id, input.TrackingNumber ?? order.TrackingNumber);
+                }
+            }
 
             TempData["Message"] = $"Order {input.Id[..8]}... updated to {input.Status}.";
             return RedirectToAction("Details", "Orders", new { id = input.Id });
