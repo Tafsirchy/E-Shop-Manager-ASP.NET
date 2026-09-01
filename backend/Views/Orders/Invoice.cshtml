@@ -204,49 +204,57 @@
                 ['stroke', 'stroke']
             ];
 
-            function walk(el) {
+            function normalizeInPlace(el, changed) {
                 PROPS.forEach(function (p) {
                     var raw = window.getComputedStyle(el).getPropertyValue(p[1]);
                     var c = convert(raw);
-                    if (c !== raw) { try { el.style[p[0]] = c; } catch (e) { } }
+                    if (c !== raw) {
+                        var prop = p[0];
+                        var prev = el.style.getPropertyValue(prop);
+                        el.style.setProperty(prop, c);
+                        changed.push({ el: el, prop: prop, prev: prev });
+                    }
                 });
-                for (var i = 0; i < el.children.length; i++) walk(el.children[i]);
+                for (var i = 0; i < el.children.length; i++) normalizeInPlace(el.children[i], changed);
+            }
+
+            function restoreInPlace(changed) {
+                for (var i = 0; i < changed.length; i++) {
+                    var it = changed[i];
+                    if (it.prev) it.el.style.setProperty(it.prop, it.prev);
+                    else it.el.style.removeProperty(it.prop);
+                }
             }
 
             btn.addEventListener('click', function () {
+                var card = document.getElementById('invoice-card');
                 var original = btn.textContent;
+                var changed = [];
                 btn.disabled = true;
                 btn.textContent = 'Generating\u2026';
-
-                function normalizeInClone(clonedDoc) {
-                    var card = clonedDoc.getElementById('invoice-card');
-                    if (card) {
-                        card.style.borderRadius = '0';
-                        card.style.boxShadow = 'none';
-                        walk(card);
-                    }
-                }
+                var edge = { borderRadius: card.style.borderRadius, boxShadow: card.style.boxShadow };
+                card.style.borderRadius = '0';
+                card.style.boxShadow = 'none';
+                normalizeInPlace(card, changed);
 
                 html2pdf().set({
                     margin: 10,
                     filename: 'Invoice-' + '@Model.Order.Id' + '.pdf',
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: {
-                        scale: 2,
-                        useCORS: true,
-                        backgroundColor: '#ffffff',
-                        onclone: normalizeInClone,
-                        windowWidth: document.documentElement.scrollWidth,
-                        windowHeight: document.documentElement.scrollHeight
-                    },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                    pagebreak: { mode: ['css', 'legacy'] }
-                }).from(document.getElementById('invoice-card')).save().then(function () {
+                    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                }).from(card).save().then(function () {
+                    restoreInPlace(changed);
+                    card.style.borderRadius = edge.borderRadius;
+                    card.style.boxShadow = edge.boxShadow;
                     btn.disabled = false;
                     btn.textContent = original;
                 }).catch(function (err) {
+                    restoreInPlace(changed);
+                    card.style.borderRadius = edge.borderRadius;
+                    card.style.boxShadow = edge.boxShadow;
                     console.error('PDF generation failed:', err);
-                    alert('Could not generate the PDF. Please try the print option instead.');
+                    alert('Error: ' + (err && err.message ? err.message : err));
                     btn.disabled = false;
                     btn.textContent = original;
                 });
