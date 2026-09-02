@@ -8,6 +8,7 @@ using MongoDB.Driver;
 using Serilog;
 using Stripe;
 using System.IO.Compression;
+using Microsoft.AspNetCore.HttpOverrides;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -22,6 +23,13 @@ try
     builder.Host.UseSerilog();
 
     StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 builder.Services.AddControllersWithViews();
 
@@ -109,6 +117,8 @@ builder.Services.AddMemoryCache();
 builder.Services.AddScoped<SecurityStampValidator>();
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 if (!app.Environment.IsDevelopment())
 {
