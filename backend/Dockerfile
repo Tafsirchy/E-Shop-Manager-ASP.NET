@@ -1,0 +1,35 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+# Install Node.js for Tailwind CSS build
+RUN apt-get update && apt-get install -y curl
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+RUN apt-get install -y nodejs
+
+# Copy files
+COPY ["EShopManager.API.csproj", "./"]
+COPY ["package.json", "package-lock.json*", "./"]
+
+# Restore .NET and npm dependencies
+RUN dotnet restore "EShopManager.API.csproj"
+RUN npm install
+
+# Copy the rest of the code
+COPY . .
+
+# Build Tailwind CSS
+RUN npm run build:css
+
+# Publish .NET app
+RUN dotnet publish "EShopManager.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# Final stage/image
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+
+# Expose port (Railway dynamically assigns PORT, but 8080 is default for .NET 8+)
+EXPOSE 8080
+ENV ASPNETCORE_URLS=http://+:8080
+
+ENTRYPOINT ["dotnet", "EShopManager.API.dll"]
