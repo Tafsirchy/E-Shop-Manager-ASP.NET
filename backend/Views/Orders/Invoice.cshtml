@@ -13,10 +13,16 @@
         <div class="flex items-center justify-between mb-6 print:hidden">
             <a asp-controller="Orders" asp-action="Details" asp-route-id="@Model.Order.Id"
                class="text-primary-600 hover:text-primary-700 font-medium">&larr; Back to order</a>
-            <a asp-controller="Orders" asp-action="InvoicePdf" asp-route-id="@Model.Order.Id"
-               class="inline-flex items-center rounded-full bg-primary-600 px-6 py-2 font-semibold text-white hover:bg-primary-700 transition">
-                Download PDF
-            </a>
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="window.print()"
+                   class="inline-flex items-center rounded-full border border-neutral-300 bg-white px-5 py-2 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 transition shadow-sm">
+                    Print / Save PDF
+                </button>
+                <a asp-controller="Orders" asp-action="InvoicePdf" asp-route-id="@Model.Order.Id"
+                   class="inline-flex items-center rounded-full bg-primary-600 px-6 py-2 text-sm font-semibold text-white hover:bg-primary-700 transition shadow-sm">
+                    Download PDF
+                </a>
+            </div>
         </div>
 
         <div id="invoice-card" class="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">

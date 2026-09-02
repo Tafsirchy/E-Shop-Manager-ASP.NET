@@ -25,6 +25,7 @@ RUN dotnet publish "EShopManager.API.csproj" -c Release -o /app/publish /p:UseAp
 
 # Final stage/image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+USER root
 WORKDIR /app
 
 # Install Node.js and Chromium for email & PDF generation
