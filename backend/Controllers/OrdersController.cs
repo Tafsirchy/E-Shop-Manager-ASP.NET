@@ -147,10 +147,13 @@ namespace EShopManager.API.Controllers
                 return NotFound();
 
             var html = InvoicePdfHtml.Build(result.Model!);
-            var bytes = await _pdfService.RenderAsync(html, "invoice");
+            var (bytes, error) = await _pdfService.RenderAsync(html, "invoice");
             if (bytes == null)
             {
-                TempData["StatusMessage"] = "Could not generate the invoice PDF. Please try again.";
+                var msg = string.IsNullOrWhiteSpace(error)
+                    ? "Could not generate the invoice PDF. Please use 'Print / Save PDF'."
+                    : $"PDF error: {error}";
+                TempData["StatusMessage"] = msg;
                 TempData["StatusIsError"] = true;
                 return RedirectToAction(nameof(Details), new { id });
             }

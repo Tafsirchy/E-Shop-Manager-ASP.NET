@@ -22,22 +22,30 @@ function arg(name) {
   return i !== -1 && process.argv[i + 1] !== undefined ? process.argv[i + 1] : null;
 }
 
+const { execSync } = require('child_process');
+
 function findChrome() {
   if (process.env.EShop_PDF_CHROME && fs.existsSync(process.env.EShop_PDF_CHROME)) return process.env.EShop_PDF_CHROME;
   const candidates = [
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/snap/bin/chromium',
     'C:/Program Files/Google/Chrome/Application/chrome.exe',
     'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
     process.env.LOCALAPPDATA + '/Google/Chrome/Application/chrome.exe',
     'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
     'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
-    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-    '/usr/bin/google-chrome',
-    '/usr/bin/chromium',
-    '/usr/bin/chromium-browser'
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
   ];
   for (const c of candidates) {
     if (c && fs.existsSync(c)) return c;
   }
+  try {
+    const which = execSync('which chromium || which chromium-browser || which google-chrome', { encoding: 'utf8' }).trim();
+    if (which && fs.existsSync(which)) return which;
+  } catch {}
   return null;
 }
 
@@ -64,8 +72,8 @@ function findChrome() {
   try {
     browser = await launch({
       executablePath: chromePath,
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--no-first-run', '--no-zygote']
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--no-first-run', '--no-zygote', '--single-process']
     });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'load', timeout: 30000 });

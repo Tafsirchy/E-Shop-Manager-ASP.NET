@@ -25,14 +25,15 @@ namespace EShopManager.API.Services
         /// <summary>
         /// Renders the supplied HTML to PDF bytes. Returns null if generation fails.
         /// </summary>
-        public async Task<byte[]?> RenderAsync(string html, string baseFileName)
+        public async Task<(byte[]? Bytes, string? Error)> RenderAsync(string html, string baseFileName)
         {
             var projectDir = _env.ContentRootPath;
             var script = Path.Combine(projectDir, "pdf", "generate.js");
             if (!File.Exists(script))
             {
-                _logger.LogWarning("PDF script not found at {Script}.", script);
-                return null;
+                var err = $"PDF script not found at {script}.";
+                _logger.LogWarning(err);
+                return (null, err);
             }
 
             var tempDir = Path.Combine(Path.GetTempPath(), "eshop-pdf");
@@ -66,8 +67,9 @@ namespace EShopManager.API.Services
                 using var proc = Process.Start(psi);
                 if (proc == null)
                 {
-                    _logger.LogWarning("Failed to start PDF process.");
-                    return null;
+                    var err = "Failed to start PDF process.";
+                    _logger.LogWarning(err);
+                    return (null, err);
                 }
 
                 var stdout = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
@@ -76,17 +78,18 @@ namespace EShopManager.API.Services
 
                 if (stdout.Contains("PDF_GENERATED") && File.Exists(pdfPath))
                 {
-                    return await File.ReadAllBytesAsync(pdfPath).ConfigureAwait(false);
+                    return (await File.ReadAllBytesAsync(pdfPath).ConfigureAwait(false), null);
                 }
 
+                var errOutput = !string.IsNullOrWhiteSpace(stderr) ? stderr.Trim() : stdout.Trim();
                 _logger.LogWarning("PDF generation failed. stdout={Stdout} stderr={Stderr}",
                     stdout.Trim(), stderr.Trim());
-                return null;
+                return (null, errOutput);
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "PDF generation threw.");
-                return null;
+                return (null, ex.Message);
             }
             finally
             {
