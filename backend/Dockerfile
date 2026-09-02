@@ -21,7 +21,7 @@ COPY . .
 RUN npm run build:css
 
 # Publish .NET app
-RUN dotnet publish "EShopManager.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "EShopManager.API.csproj" -c Release -o /app/publish /p:UseAppHost=false /p:AnalysisLevel=none /p:EnableNETAnalyzers=false
 
 # Final stage/image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
