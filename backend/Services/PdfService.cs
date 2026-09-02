@@ -57,7 +57,7 @@ namespace EShopManager.API.Services
                 psi.ArgumentList.Add("--html"); psi.ArgumentList.Add(htmlPath);
                 psi.ArgumentList.Add("--out"); psi.ArgumentList.Add(pdfPath);
 
-                var chrome = _config["Pdf:ChromePath"];
+                var chrome = _config["Pdf:ChromePath"] ?? Environment.GetEnvironmentVariable("EShop_PDF_CHROME");
                 if (!string.IsNullOrWhiteSpace(chrome))
                 {
                     psi.Environment["EShop_PDF_CHROME"] = chrome;

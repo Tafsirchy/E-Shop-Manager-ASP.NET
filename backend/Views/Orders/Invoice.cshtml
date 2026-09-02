@@ -13,7 +13,7 @@
         <div class="flex items-center justify-between mb-6 print:hidden">
             <a asp-controller="Orders" asp-action="Details" asp-route-id="@Model.Order.Id"
                class="text-primary-600 hover:text-primary-700 font-medium">&larr; Back to order</a>
-            <a asp-controller="Orders" asp-action="InvoicePdf" asp-route-id="@Model.Order.Id" target="_blank"
+            <a asp-controller="Orders" asp-action="InvoicePdf" asp-route-id="@Model.Order.Id"
                class="inline-flex items-center rounded-full bg-primary-600 px-6 py-2 font-semibold text-white hover:bg-primary-700 transition">
                 Download PDF
             </a>

@@ -23,7 +23,7 @@ function arg(name) {
 }
 
 function findChrome() {
-  if (process.env.EShop_PDF_CHROME) return process.env.EShop_PDF_CHROME;
+  if (process.env.EShop_PDF_CHROME && fs.existsSync(process.env.EShop_PDF_CHROME)) return process.env.EShop_PDF_CHROME;
   const candidates = [
     'C:/Program Files/Google/Chrome/Application/chrome.exe',
     'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
@@ -65,7 +65,7 @@ function findChrome() {
     browser = await launch({
       executablePath: chromePath,
       headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu']
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
     });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });

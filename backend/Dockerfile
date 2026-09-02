@@ -27,11 +27,13 @@ RUN dotnet publish "EShopManager.API.csproj" -c Release -o /app/publish /p:UseAp
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
-# Install Node.js runtime for email & pdf background scripts
-RUN apt-get update && apt-get install -y curl && \
+# Install Node.js and Chromium for email & PDF generation
+RUN apt-get update && apt-get install -y curl gnupg && \
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
+    apt-get install -y nodejs chromium fonts-liberation && \
     rm -rf /var/lib/apt/lists/*
+
+ENV EShop_PDF_CHROME=/usr/bin/chromium
 
 COPY --from=build /app/publish .
 COPY --from=build /src/email ./email
