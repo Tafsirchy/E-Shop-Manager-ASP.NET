@@ -79,12 +79,12 @@ namespace EShopManager.API.Services
                 psi.ArgumentList.Add("--subject"); psi.ArgumentList.Add(subject);
                 psi.ArgumentList.Add("--html"); psi.ArgumentList.Add(htmlBody);
 
-                psi.Environment["EShop_SMTP_HOST"] = _config["Email:SmtpHost"] ?? "";
-                psi.Environment["EShop_SMTP_PORT"] = _config["Email:SmtpPort"] ?? "587";
-                psi.Environment["EShop_SMTP_USER"] = _config["Email:SmtpUser"] ?? "";
-                psi.Environment["EShop_SMTP_PASS"] = _config["Email:SmtpPass"] ?? "";
-                psi.Environment["EShop_SMTP_FROM_NAME"] = _config["Email:FromName"] ?? "";
-                psi.Environment["EShop_SMTP_FROM_ADDR"] = _config["Email:FromAddress"] ?? "";
+                psi.Environment["EShop_SMTP_HOST"] = _config["Email:SmtpHost"] ?? Environment.GetEnvironmentVariable("EShop_SMTP_HOST") ?? "";
+                psi.Environment["EShop_SMTP_PORT"] = _config["Email:SmtpPort"] ?? Environment.GetEnvironmentVariable("EShop_SMTP_PORT") ?? "587";
+                psi.Environment["EShop_SMTP_USER"] = _config["Email:SmtpUser"] ?? Environment.GetEnvironmentVariable("EShop_SMTP_USER") ?? "";
+                psi.Environment["EShop_SMTP_PASS"] = _config["Email:SmtpPass"] ?? Environment.GetEnvironmentVariable("EShop_SMTP_PASS") ?? "";
+                psi.Environment["EShop_SMTP_FROM_NAME"] = _config["Email:FromName"] ?? Environment.GetEnvironmentVariable("EShop_SMTP_FROM_NAME") ?? "";
+                psi.Environment["EShop_SMTP_FROM_ADDR"] = _config["Email:FromAddress"] ?? Environment.GetEnvironmentVariable("EShop_SMTP_FROM_ADDR") ?? "";
 
                 // Run off the request thread so a slow SMTP server never blocks the admin UI.
                 _ = Task.Run(async () =>
