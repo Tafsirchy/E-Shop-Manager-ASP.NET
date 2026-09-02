@@ -1,0 +1,42 @@
+@model PaginationInfo
+@{
+    var extra = ViewData["PaginationRouteValues"] as IDictionary<string, string> ?? new Dictionary<string, string>();
+}
+@if (Model.TotalPages > 1)
+{
+    <div class="flex flex-wrap items-center justify-between gap-4 mt-6 pt-4 border-t border-border">
+        <p class="text-sm text-neutral-500">Showing @Model.StartItem&ndash;@Model.EndItem of @Model.TotalCount</p>
+        <nav class="flex items-center gap-1.5">
+            @if (Model.HasPrevious)
+            {
+                <a asp-action="@ViewContext.RouteData.Values["action"]" asp-route-page="@(Model.Page - 1)"
+                   asp-all-route-data="@extra"
+                   class="rounded-full border border-border px-4 py-1.5 text-sm font-semibold text-neutral-600 hover:border-neutral-400 transition">&larr; Prev</a>
+            }
+
+            @{
+                var startPage = Math.Max(1, Model.Page - 2);
+                var endPage = Math.Min(Model.TotalPages, Model.Page + 2);
+            }
+            @for (var p = startPage; p <= endPage; p++)
+            {
+                if (p == Model.Page)
+                {
+                    <span class="flex h-9 w-9 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">@p</span>
+                }
+                else
+                {
+                    <a asp-action="@ViewContext.RouteData.Values["action"]" asp-route-page="@p" asp-all-route-data="@extra"
+                       class="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-neutral-600 hover:bg-neutral-100 transition">@p</a>
+                }
+            }
+
+            @if (Model.HasNext)
+            {
+                <a asp-action="@ViewContext.RouteData.Values["action"]" asp-route-page="@(Model.Page + 1)"
+                   asp-all-route-data="@extra"
+                   class="rounded-full border border-border px-4 py-1.5 text-sm font-semibold text-neutral-600 hover:border-neutral-400 transition">Next &rarr;</a>
+            }
+        </nav>
+    </div>
+}

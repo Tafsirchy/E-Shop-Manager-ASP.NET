@@ -51,17 +51,27 @@ namespace EShopManager.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Products()
+        public async Task<IActionResult> Products(int page = 1, int pageSize = 20)
         {
-            var products = await _productService.GetAsync();
-            return View(new AdminProductsViewModel { Products = products });
+            var all = await _productService.GetAsync();
+            var pagination = PaginationInfo.Create(page, pageSize, all.Count);
+            var pageItems = all.OrderBy(p => p.Name)
+                .Skip((pagination.Page - 1) * pagination.PageSize)
+                .Take(pagination.PageSize)
+                .ToList();
+            return View(new AdminProductsViewModel { Products = pageItems, Pagination = pagination });
         }
 
         [HttpGet]
-        public async Task<IActionResult> Users()
+        public async Task<IActionResult> Users(int page = 1, int pageSize = 20)
         {
-            var users = await _userService.GetAllAsync();
-            return View(new AdminUsersViewModel { Users = users });
+            var all = await _userService.GetAllAsync();
+            var pagination = PaginationInfo.Create(page, pageSize, all.Count);
+            var pageItems = all.OrderBy(u => u.Email)
+                .Skip((pagination.Page - 1) * pagination.PageSize)
+                .Take(pagination.PageSize)
+                .ToList();
+            return View(new AdminUsersViewModel { Users = pageItems, Pagination = pagination });
         }
 
         [HttpPost]
@@ -90,17 +100,27 @@ namespace EShopManager.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Orders(string? status)
+        public async Task<IActionResult> Orders(string? status, int page = 1, int pageSize = 20)
         {
-            var orders = await _orderService.GetAllOrdersAsync();
+            var all = await _orderService.GetAllOrdersAsync();
+            all = all.OrderByDescending(o => o.CreatedAt).ToList();
+
             if (!string.IsNullOrWhiteSpace(status) && status != "All")
             {
-                orders = orders.Where(o => string.Equals(o.Status, status, StringComparison.OrdinalIgnoreCase)).ToList();
+                all = all.Where(o => string.Equals(o.Status, status, StringComparison.OrdinalIgnoreCase)).ToList();
             }
+
+            var pagination = PaginationInfo.Create(page, pageSize, all.Count);
+            var pageItems = all
+                .Skip((pagination.Page - 1) * pagination.PageSize)
+                .Take(pagination.PageSize)
+                .ToList();
+
             return View(new AdminOrdersViewModel
             {
-                Orders = orders.OrderByDescending(o => o.CreatedAt).ToList(),
-                Status = string.IsNullOrWhiteSpace(status) ? "All" : status
+                Orders = pageItems,
+                Status = string.IsNullOrWhiteSpace(status) ? "All" : status,
+                Pagination = pagination
             });
         }
 

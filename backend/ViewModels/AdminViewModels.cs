@@ -34,11 +34,13 @@ namespace EShopManager.API.ViewModels
     public class AdminProductsViewModel
     {
         public List<Product> Products { get; set; } = new();
+        public PaginationInfo Pagination { get; set; } = new();
     }
 
     public class AdminUsersViewModel
     {
         public List<User> Users { get; set; } = new();
+        public PaginationInfo Pagination { get; set; } = new();
     }
 
     public class AdminPackagesViewModel
@@ -55,6 +57,7 @@ namespace EShopManager.API.ViewModels
     {
         public List<Order> Orders { get; set; } = new();
         public string Status { get; set; } = "All";
+        public PaginationInfo Pagination { get; set; } = new();
     }
 
     public class AdminCouponsViewModel

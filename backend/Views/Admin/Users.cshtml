@@ -6,7 +6,7 @@
     <div class="max-w-6xl mx-auto">
         <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
             <h1 class="text-2xl font-bold text-foreground">Manage Users</h1>
-            <p class="text-sm text-neutral-500">@Model.Users.Count user(s)</p>
+            <p class="text-sm text-neutral-500">@Model.Pagination.TotalCount user(s)</p>
         </div>
 
         <div class="rounded-2xl border border-border bg-card p-6 shadow-sm">
@@ -62,5 +62,7 @@
                 </div>
             }
         </div>
+
+        <partial name="_Pagination" model="Model.Pagination" />
     </div>
 </main>

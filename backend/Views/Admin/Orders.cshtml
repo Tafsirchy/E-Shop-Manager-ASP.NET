@@ -17,7 +17,7 @@
     <div class="max-w-6xl mx-auto">
         <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
             <h1 class="text-2xl font-bold text-foreground">Manage Orders</h1>
-            <p class="text-sm text-neutral-500">@Model.Orders.Count order(s)</p>
+            <p class="text-sm text-neutral-500">@Model.Pagination.TotalCount order(s)</p>
         </div>
 
         <div class="flex flex-wrap gap-2 mb-6">
@@ -82,5 +82,15 @@
                 </div>
             }
         </div>
+
+        @{
+            var pageRoute = new Dictionary<string, string>();
+            if (Model.Status != "All")
+            {
+                pageRoute["status"] = Model.Status;
+            }
+            ViewData["PaginationRouteValues"] = pageRoute;
+        }
+        <partial name="_Pagination" model="Model.Pagination" />
     </div>
 </main>
