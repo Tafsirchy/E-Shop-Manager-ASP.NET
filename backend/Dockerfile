@@ -11,7 +11,15 @@ RUN dotnet restore "EShopManager.API.csproj" -m:1 --disable-build-servers
 
 # Copy source code and publish
 COPY . .
-RUN dotnet publish "EShopManager.API.csproj" -c Release -o /app/publish /p:UseAppHost=false -m:1 --disable-build-servers
+RUN dotnet publish "EShopManager.API.csproj" \
+    -c Release \
+    -o /app/publish \
+    /p:UseAppHost=false \
+    /p:EnableNETAnalyzers=false \
+    /p:AnalysisLevel=0 \
+    /p:UseSharedCompilation=false \
+    -m:1 \
+    --disable-build-servers
 
 # Final runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
@@ -34,7 +42,7 @@ COPY --from=build /app/publish .
 COPY email ./email
 COPY pdf ./pdf
 COPY package.json package-lock.json* ./
-RUN npm install --omit=dev --no-audit --no-fund
+RUN npm install --omit=dev --ignore-scripts --no-audit --no-fund
 
 # Expose port (Railway dynamically assigns PORT, but 8080 is default for .NET 8+)
 EXPOSE 8080
