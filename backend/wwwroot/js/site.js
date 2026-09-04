@@ -496,6 +496,96 @@
             msg.classList.toggle('text-success-700', !isError);
         }
 
+        // Password visibility toggles (Sign Up panel)
+        modal.querySelectorAll('[data-toggle-eye]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var input = document.getElementById(btn.dataset.toggleEye);
+                if (!input) return;
+                var show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                var open = btn.querySelector('[data-eye-open]');
+                var closed = btn.querySelector('[data-eye-closed]');
+                if (open && closed) {
+                    open.classList.toggle('hidden', !show);
+                    closed.classList.toggle('hidden', show);
+                }
+            });
+        });
+
+        // Password strength meter + confirm match
+        var pwInput = document.getElementById('register-password');
+        var pwConfirm = document.getElementById('register-confirm');
+        var pwSegs = modal.querySelectorAll('[data-pw-seg]');
+        var pwLabel = modal.querySelector('[data-pw-label]');
+        var pwMatch = modal.querySelector('[data-pw-match]');
+        var pwColors = ['bg-neutral-200', 'bg-danger-500', 'bg-warning-500', 'bg-success-500'];
+
+        function removePwColors(el) {
+            pwColors.forEach(function (c) { el.classList.remove(c); });
+        }
+
+        function scorePassword(value) {
+            var score = 0;
+            if (!value) return 0;
+            if (value.length >= 6) score++;
+            if (value.length >= 10) score++;
+            if (/[A-Z]/.test(value) && /[a-z]/.test(value)) score++;
+            if (/\d/.test(value)) score++;
+            if (/[^A-Za-z0-9]/.test(value)) score++;
+            if (value.length >= 12) score++;
+            return Math.min(score, 4);
+        }
+
+        function updateStrength() {
+            if (!pwInput) return;
+            var value = pwInput.value;
+            var score = scorePassword(value);
+            pwSegs.forEach(function (seg) { removePwColors(seg); });
+            if (!value) {
+                pwSegs.forEach(function (seg) { seg.classList.add('bg-neutral-200'); });
+                if (pwLabel) {
+                    pwLabel.textContent = 'Password strength';
+                    pwLabel.classList.remove('text-danger-500', 'text-warning-500', 'text-success-500');
+                    pwLabel.classList.add('text-neutral-400');
+                }
+            } else {
+                var labelText = ['Too short', 'Weak', 'Fair', 'Good', 'Strong'][score];
+                var color = pwColors[score];
+                pwSegs.forEach(function (seg, i) { seg.classList.add(i < score ? color : 'bg-neutral-200'); });
+                if (pwLabel) {
+                    pwLabel.textContent = labelText;
+                    pwLabel.classList.remove('text-neutral-400', 'text-danger-500', 'text-warning-500', 'text-success-500');
+                    if (score <= 1) pwLabel.classList.add('text-danger-500');
+                    else if (score === 2) pwLabel.classList.add('text-warning-500');
+                    else pwLabel.classList.add('text-success-500');
+                }
+            }
+            updateMatch();
+        }
+
+        function updateMatch() {
+            if (!pwMatch) return;
+            var pw = pwInput ? pwInput.value : '';
+            var cf = pwConfirm ? pwConfirm.value : '';
+            if (!cf) {
+                pwMatch.textContent = '';
+                pwMatch.classList.remove('text-danger-500', 'text-success-500');
+                return;
+            }
+            if (pw === cf) {
+                pwMatch.textContent = 'Passwords match';
+                pwMatch.classList.remove('text-danger-500');
+                pwMatch.classList.add('text-success-500');
+            } else {
+                pwMatch.textContent = 'Passwords do not match';
+                pwMatch.classList.remove('text-success-500');
+                pwMatch.classList.add('text-danger-500');
+            }
+        }
+
+        if (pwInput) pwInput.addEventListener('input', updateStrength);
+        if (pwConfirm) pwConfirm.addEventListener('input', updateMatch);
+
         // Global triggers: any element with [data-auth-toggle]
         document.addEventListener('click', function (e) {
             var trigger = e.target.closest ? e.target.closest('[data-auth-toggle]') : null;
@@ -528,6 +618,14 @@
             var form = e.target;
             if (!form.matches('[data-auth-form]')) return;
             e.preventDefault();
+
+            // Client-side guard for sign-up: enforce strength + match before submit
+            if (form.dataset.authForm === 'register') {
+                var pw = form.querySelector('#register-password');
+                var cf = form.querySelector('#register-confirm');
+                if (pw && pw.value.length < 6) { showMsg('Password must be at least 6 characters.', true); return; }
+                if (cf && pw && pw.value !== cf.value) { showMsg('Passwords do not match.', true); return; }
+            }
 
             var btn = form.querySelector('button[type="submit"]');
             var spinBtn = btn;
